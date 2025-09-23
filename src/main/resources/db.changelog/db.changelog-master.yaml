@@ -1,0 +1,4 @@
+databaseChangeLog:
+#  - include:
+#      file: migrations/202503101200_init_db.sql
+#      relativeToChangelogFile: true

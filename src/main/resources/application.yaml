@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: kodrul_bot
+  datasource:
+    url: jdbc:postgresql://localhost:5445/kodrul_bot
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: create-drop
+  liquibase:
+    change-log: db.changelog/db.changelog-master.yaml
+
+logging:
+  level:
+    org:
+      springframework:
+        web: info
+
+server:
+  port: 8880
