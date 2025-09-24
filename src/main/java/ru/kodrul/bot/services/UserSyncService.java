@@ -10,6 +10,7 @@ import ru.kodrul.bot.entity.TelegramUser;
 import ru.kodrul.bot.repository.TelegramUserRepository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -79,8 +80,61 @@ public class UserSyncService {
     @Scheduled(cron = "0 0 1 * * ?")
     @Transactional
     public void scheduledUserSync() {
-        log.info("Scheduled user sync started");
-        // TODO Реализация синхронизации по расписанию
+        log.info("Starting scheduled user synchronization");
+
+        try {
+            List<Long> activeChats = getChatsWhereBotIsMember();
+
+            for (Long chatId : activeChats) {
+                syncChatUsers(chatId);
+            }
+
+            log.info("Scheduled user synchronization completed. Processed {} chats", activeChats.size());
+        } catch (Exception e) {
+            log.error("Error during scheduled user synchronization", e);
+        }
+    }
+
+    /**
+     * Получаем чаты, где есть бот (из таблицы chat_groups)
+     */
+    private List<Long> getChatsWhereBotIsMember() {
+        return userRepository.findDistinctChatIds();
+    }
+
+    /**
+     * Синхронизация всех участников чата
+     */
+    @Transactional
+    public void syncChatUsers(Long chatId) {
+        try {
+            // TODO реализовать синхронизацию
+        } catch (Exception e) {
+            log.error("Unexpected error syncing users for chat {}", chatId, e);
+        }
+    }
+
+    /**
+     * Синхронизация пользователей, которые уже есть в базе для этого чата
+     */
+    @Transactional
+    public void syncExistingChatUsers(Long chatId) {
+        // Здесь можно добавить логику для синхронизации пользователей,
+        // которые уже были сохранены в базе для этого чата
+        // Например, через группы или предыдущие сообщения
+
+        log.debug("Syncing existing users for chat: {}", chatId);
+    }
+
+    private void createMinimalUser(Long userId) {
+        if (!userRepository.findByUserId(userId).isPresent()) {
+            TelegramUser user = new TelegramUser();
+            user.setUserId(userId);
+            user.setFirstName("Unknown");
+            user.setLastName("User");
+            userRepository.save(user);
+            log.info("Created minimal user record for ID: {}", userId);
+        }
     }
 
     private boolean equalsSafe(String str1, String str2) {

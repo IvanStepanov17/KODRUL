@@ -7,7 +7,13 @@ import org.telegram.abilitybots.api.sender.SilentSender;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
+import ru.kodrul.bot.entity.TelegramUser;
+import ru.kodrul.bot.parser.MentionParser;
+import ru.kodrul.bot.parser.ParsedMention;
 import ru.kodrul.bot.services.UserSyncService;
+
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -15,16 +21,18 @@ import ru.kodrul.bot.services.UserSyncService;
 public class UserSyncHandler extends ResponseHandler {
 
     private final UserSyncService userSyncService;
+    private final MentionParser mentionParser;
 
     /**
     * Обрабатываем новые сообщения от пользователей или новых участников чата
-    * */
+    */
     @Override
     public boolean canAccept(Update update) {
         if (update.hasMessage()) {
             Message message = update.getMessage();
             return (message.getFrom() != null && !message.getFrom().getIsBot()) ||
-                    (message.getNewChatMembers() != null && !message.getNewChatMembers().isEmpty());
+                    (message.getNewChatMembers() != null && !message.getNewChatMembers().isEmpty()) ||
+                    hasMentions(message); // Добавляем проверку на упоминания
         }
         return false;
     }
@@ -34,23 +42,63 @@ public class UserSyncHandler extends ResponseHandler {
         Message message = update.getMessage();
         Long chatId = message.getChatId();
 
-        try {
-            // Обрабатываем новых участников чата
-            if (message.getNewChatMembers() != null && !message.getNewChatMembers().isEmpty()) {
-                handleNewChatMembers(message, chatId);
-            }
-
-            // Обрабатываем отправителя сообщения (если это не бот)
-            if (message.getFrom() != null && !message.getFrom().getIsBot()) {
-                handleMessageSender(message.getFrom(), chatId);
-            }
-
-            log.debug("User sync handled for chat {}: {}", chatId,
-                    message.getFrom() != null ? message.getFrom().getId() : "unknown");
-
-        } catch (Exception e) {
-            log.error("Error in UserSyncHandler for chat {}", chatId, e);
+        // Обрабатываем упоминания в сообщении
+        if (hasMentions(message)) {
+            handleMentions(message, chatId);
         }
+
+        // Обрабатываем новых участников чата
+        if (message.getNewChatMembers() != null) {
+            handleNewChatMembers(message, chatId);
+        }
+
+        // Обрабатываем отправителя сообщения (если это не бот)
+        if (message.getFrom() != null && !message.getFrom().getIsBot()) {
+            handleMessageSender(message.getFrom(), chatId);
+        }
+    }
+
+    /**
+     * Обработка упоминаний в сообщении
+     */
+    private void handleMentions(Message message, Long chatId) {
+        List<ParsedMention> mentions = mentionParser.parseMentions(
+                message.getText(),
+                message.getEntities()
+        );
+
+        for (ParsedMention mention : mentions) {
+            try {
+                if (mention.getUserId() != null) {
+                    // Упоминание с user_id - синхронизируем
+                    userSyncService.syncUserWithChat(mention.getUserId(), chatId);
+                } else if (mention.getUsername() != null) {
+                    // Упоминание по username - ищем в базе или через API
+                    syncUserByUsername(mention.getUsername(), chatId);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to sync mentioned user: {}", mention.getText(), e);
+            }
+        }
+    }
+
+    private void syncUserByUsername(String username, Long chatId) {
+        // Сначала ищем в базе
+        Optional<TelegramUser> userOpt = userSyncService.findUserByUsername(username);
+        if (userOpt.isPresent()) {
+            return; // Уже есть в базе
+        }
+
+        // Если нет в базе, пытаемся получить через API
+        // (реализация зависит от доступных методов Telegram API)
+        log.debug("User @{} mentioned but not found in database", username);
+    }
+
+    private boolean hasMentions(Message message) {
+        return message.getEntities() != null &&
+                message.getEntities().stream()
+                        .anyMatch(entity -> "mention".equals(entity.getType()) ||
+                                "text_mention".equals(entity.getType()));
     }
 
     /**

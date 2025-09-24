@@ -22,4 +22,7 @@ public interface TelegramUserRepository extends JpaRepository<TelegramUser, Long
     void updateLastSeen(@Param("userId") Long userId);
 
     Optional<TelegramUser> findByUserName(String userName);
+
+    @Query("SELECT DISTINCT gm.group.chatId FROM GroupMember gm")
+    List<Long> findDistinctChatIds();
 }
