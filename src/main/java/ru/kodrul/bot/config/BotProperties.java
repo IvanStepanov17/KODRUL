@@ -14,5 +14,4 @@ public class BotProperties {
     String name;
     String token;
     Integer botCreator;
-
 }

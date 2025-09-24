@@ -9,9 +9,13 @@ spring:
     hikari:
       maximum-pool-size: 10
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
   liquibase:
     change-log: db.changelog/db.changelog-master.yaml
 

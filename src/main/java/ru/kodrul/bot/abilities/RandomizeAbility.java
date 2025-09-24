@@ -15,7 +15,7 @@ import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 @RequiredArgsConstructor
 public class RandomizeAbility implements AbilityExtension {
 
-    private final AbilityBot extensionAbility;
+    private final AbilityBot abilityBot;
     private final RandomizeService randomizeService;
 
     public Ability randomizeAbility() {
@@ -25,7 +25,63 @@ public class RandomizeAbility implements AbilityExtension {
                 .info(Constants.RANDOMIZE_GUIDE)
                 .locality(ALL)
                 .privacy(PUBLIC)
-                .action(messageContext -> randomizeService.replayRandomize(messageContext, extensionAbility.silent()))
+                .action(ctx -> randomizeService.replayRandomize(ctx, abilityBot.silent()))
+                .build();
+    }
+
+    public Ability randomizeMultipleAbility() {
+        return Ability
+                .builder()
+                .name("randomizemulti")
+                .info("Выбрать несколько случайных участников из группы. Использование: /randomizemulti <группа> <количество>")
+                .locality(ALL)
+                .privacy(PUBLIC)
+                .input(2)
+                .action(ctx -> {
+                    String[] args = ctx.arguments();
+                    if (args.length < 2) {
+                        abilityBot.silent().send("Использование: /randomizemulti <группа> <количество>", ctx.chatId());
+                        return;
+                    }
+
+                    try {
+                        String groupName = args[0];
+                        int count = Integer.parseInt(args[1]);
+                        randomizeService.randomizeMultipleFromGroup(ctx, abilityBot.silent(), groupName, count);
+                    } catch (NumberFormatException e) {
+                        abilityBot.silent().send("❌ Количество должно быть числом", ctx.chatId());
+                    } catch (Exception e) {
+                        abilityBot.silent().send("❌ Ошибка при выполнении команды", ctx.chatId());
+                    }
+                })
+                .build();
+    }
+
+    public Ability distributeTeamsAbility() {
+        return Ability
+                .builder()
+                .name("distributeteams")
+                .info("Распределить участников группы на команды. Использование: /distributeteams <группа> <количество_команд>")
+                .locality(ALL)
+                .privacy(PUBLIC)
+                .input(2)
+                .action(ctx -> {
+                    String[] args = ctx.arguments();
+                    if (args.length < 2) {
+                        abilityBot.silent().send("Использование: /distributeteams <группа> <количество_команд>", ctx.chatId());
+                        return;
+                    }
+
+                    try {
+                        String groupName = args[0];
+                        int teamCount = Integer.parseInt(args[1]);
+                        randomizeService.distributeGroupToTeams(ctx, abilityBot.silent(), groupName, teamCount);
+                    } catch (NumberFormatException e) {
+                        abilityBot.silent().send("❌ Количество команд должно быть числом", ctx.chatId());
+                    } catch (Exception e) {
+                        abilityBot.silent().send("❌ Ошибка при распределении по командам", ctx.chatId());
+                    }
+                })
                 .build();
     }
 }

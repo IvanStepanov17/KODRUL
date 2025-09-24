@@ -1,5 +1,7 @@
 package ru.kodrul.bot.bot;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.telegram.abilitybots.api.bot.AbilityBot;
@@ -9,6 +11,7 @@ import ru.kodrul.bot.abilities.HelperAbility;
 import ru.kodrul.bot.abilities.RandomizeAbility;
 import ru.kodrul.bot.abilities.RouletteAbility;
 import ru.kodrul.bot.abilities.admin.ChatMemberAbility;
+import ru.kodrul.bot.abilities.admin.GroupManagementAbility;
 import ru.kodrul.bot.config.BotProperties;
 import ru.kodrul.bot.handlers.ResponseHandler;
 import ru.kodrul.bot.services.GroupDistributeService;
@@ -17,6 +20,7 @@ import ru.kodrul.bot.services.RouletteService;
 
 import java.util.Set;
 
+@Slf4j
 @Service
 public class KodRulBot extends AbilityBot {
 
@@ -29,7 +33,9 @@ public class KodRulBot extends AbilityBot {
             BotProperties properties,
             RouletteService rouletteService,
             GroupDistributeService groupDistributeService,
-            RandomizeService randomizeService
+            RandomizeService randomizeService,
+            @Lazy GroupManagementAbility groupManagementAbility,
+            @Lazy ChatMemberAbility chatMemberAbility
     ) {
         super(environment.getProperty("bot.token"), environment.getProperty("bot.name"));
         this.handlers = handlers;
@@ -39,7 +45,8 @@ public class KodRulBot extends AbilityBot {
                 new RandomizeAbility(this, randomizeService),
                 new GroupDistributeAbility(this, groupDistributeService),
                 new HelperAbility(this),
-                new ChatMemberAbility(this)
+                groupManagementAbility,
+                chatMemberAbility
         );
     }
 
@@ -47,8 +54,14 @@ public class KodRulBot extends AbilityBot {
     public void onUpdateReceived(Update update) {
         handlers.stream()
                 .filter(handler -> handler.canAccept(update))
-                .forEach(handler -> handler.handle(update, silent));
-        System.out.println("Receive new Update. updateID: " + update.getUpdateId());
+                .forEach(handler -> {
+                    try {
+                        handler.handle(update, silent);
+                    } catch (Exception e) {
+                        log.error("Error in handler {}", handler.getClass().getSimpleName(), e);
+                    }
+                });
+        log.info("Receive new Update. updateID: {}", update.getUpdateId());
         super.onUpdateReceived(update);
     }
 

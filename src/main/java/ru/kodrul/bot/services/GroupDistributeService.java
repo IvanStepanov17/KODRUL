@@ -87,7 +87,7 @@ public class GroupDistributeService {
         }
 
         Collections.shuffle(groupNames);
-        // Формирование ответа
+
         StringBuilder response = new StringBuilder("Распределение участников завершено!\n");
         for (int i = 0; i < groups.size(); i++) {
             response.append(groupNames.get(i)).append(": ").append(groups.get(i)).append("\n");

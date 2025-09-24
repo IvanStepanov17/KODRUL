@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.abilitybots.api.objects.MessageContext;
 import org.telegram.abilitybots.api.sender.SilentSender;
-import ru.kodrul.bot.repository.RandomizeRepository;
 import ru.kodrul.bot.utils.Constants;
 
 import java.util.ArrayList;
@@ -20,8 +19,6 @@ import java.util.Random;
 @Service
 @RequiredArgsConstructor
 public class RouletteService {
-
-    private RandomizeRepository randomizeRepository;
 
     @Transactional
     public void replyRussianRoulette(MessageContext context, SilentSender sender) {
