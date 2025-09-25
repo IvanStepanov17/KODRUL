@@ -129,15 +129,25 @@ public class UserSyncHandler extends ResponseHandler {
      */
     private void handleMessageSender(User user, Long chatId) {
         try {
+            Optional<TelegramUser> existingUser = userSyncService.findUserByUsername(user.getUserName());
+
+            if (existingUser.isPresent() &&
+                    userSyncService.isTemporaryUserId(existingUser.get().getUserId())) {
+
+                TelegramUser updatedUser = userSyncService.updateTemporaryUser(
+                        user.getUserName(), user.getId()
+                );
+
+                if (updatedUser != null) {
+                    log.info("Updated temporary user @{} with real ID: {}",
+                            user.getUserName(), user.getId());
+                }
+            }
 
             userSyncService.syncUser(user);
 
-            log.debug("User activity registered: {} in chat {}",
-                    formatUserInfo(user), chatId);
-
         } catch (Exception e) {
-            log.error("Failed to sync message sender {} in chat {}",
-                    user.getId(), chatId, e);
+            log.error("Failed to sync message sender {} in chat {}", user.getId(), chatId, e);
         }
     }
 
