@@ -162,22 +162,6 @@ public class GroupManagementService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Получение группы по ID с проверкой прав доступа
-     */
-    public Optional<ChatGroup> getGroupWithAccessCheck(Long groupId, Long userId, Long chatId) {
-        Optional<ChatGroup> groupOpt = groupRepository.findById(groupId);
-        if (groupOpt.isPresent()) {
-            ChatGroup group = groupOpt.get();
-            // Проверяем, что группа принадлежит этому чату
-            if (group.getChatId().equals(chatId)) {
-                // TODO Нужна ли дополнительная проверка прав доступа?
-                return groupOpt;
-            }
-        }
-        return Optional.empty();
-    }
-
     public boolean isUserInGroup(Long groupId, Long userId) {
         return memberRepository.existsByGroupIdAndUserId(groupId, userId);
     }

@@ -7,6 +7,7 @@ import org.telegram.abilitybots.api.objects.Ability;
 import org.telegram.abilitybots.api.util.AbilityExtension;
 import ru.kodrul.bot.services.RandomizeService;
 import ru.kodrul.bot.utils.Constants;
+import ru.kodrul.bot.utils.Helper;
 
 import static org.telegram.abilitybots.api.objects.Locality.ALL;
 import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
@@ -75,7 +76,7 @@ public class RandomizeAbility implements AbilityExtension {
                     try {
                         String groupName = args[0];
                         int teamCount = Integer.parseInt(args[1]);
-                        randomizeService.distributeGroupToTeams(ctx, abilityBot.silent(), groupName, teamCount);
+                        randomizeService.distributeGroupToTeams(ctx, abilityBot.silent(), Helper.escapeMarkdownV2(groupName), teamCount);
                     } catch (NumberFormatException e) {
                         abilityBot.silent().send("❌ Количество команд должно быть числом", ctx.chatId());
                     } catch (Exception e) {

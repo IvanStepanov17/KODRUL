@@ -8,7 +8,6 @@ public class Helper {
     public static String escapeMarkdownV2(String text) {
         if (text == null) return "";
 
-        // Экранируем специальные символы MarkdownV2
         return text.replace("_", "\\_")
                 .replace("*", "\\*")
                 .replace("[", "\\[")

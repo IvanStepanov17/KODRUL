@@ -32,7 +32,7 @@ public class UserSyncHandler extends ResponseHandler {
             Message message = update.getMessage();
             return (message.getFrom() != null && !message.getFrom().getIsBot()) ||
                     (message.getNewChatMembers() != null && !message.getNewChatMembers().isEmpty()) ||
-                    hasMentions(message); // Добавляем проверку на упоминания
+                    hasMentions(message);
         }
         return false;
     }
@@ -83,14 +83,12 @@ public class UserSyncHandler extends ResponseHandler {
     }
 
     private void syncUserByUsername(String username, Long chatId) {
-        // Сначала ищем в базе
         Optional<TelegramUser> userOpt = userSyncService.findUserByUsername(username);
         if (userOpt.isPresent()) {
-            return; // Уже есть в базе
+            return;
         }
 
-        // Если нет в базе, пытаемся получить через API
-        // (реализация зависит от доступных методов Telegram API)
+        // TODO Если нет в базе, пытаемся получить через API
         log.debug("User @{} mentioned but not found in database", username);
     }
 

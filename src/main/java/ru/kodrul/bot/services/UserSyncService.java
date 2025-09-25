@@ -108,32 +108,9 @@ public class UserSyncService {
     @Transactional
     public void syncChatUsers(Long chatId) {
         try {
-            // TODO реализовать синхронизацию
+            // TODO реализовать синхронизацию для планировщика
         } catch (Exception e) {
             log.error("Unexpected error syncing users for chat {}", chatId, e);
-        }
-    }
-
-    /**
-     * Синхронизация пользователей, которые уже есть в базе для этого чата
-     */
-    @Transactional
-    public void syncExistingChatUsers(Long chatId) {
-        // Здесь можно добавить логику для синхронизации пользователей,
-        // которые уже были сохранены в базе для этого чата
-        // Например, через группы или предыдущие сообщения
-
-        log.debug("Syncing existing users for chat: {}", chatId);
-    }
-
-    private void createMinimalUser(Long userId) {
-        if (!userRepository.findByUserId(userId).isPresent()) {
-            TelegramUser user = new TelegramUser();
-            user.setUserId(userId);
-            user.setFirstName("Unknown");
-            user.setLastName("User");
-            userRepository.save(user);
-            log.info("Created minimal user record for ID: {}", userId);
         }
     }
 

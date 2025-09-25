@@ -155,7 +155,6 @@ public class MemberOperationHandler {
         if (mention.getUserId() != null) {
             return currentUserIds.contains(mention.getUserId()) ? mention.getUserId() : null;
         } else {
-            // Ищем по username среди текущих участников
             var userOpt = userSyncService.findUserByUsername(mention.getUsername());
             return userOpt.filter(user -> currentUserIds.contains(user.getUserId()))
                     .map(TelegramUser::getUserId)

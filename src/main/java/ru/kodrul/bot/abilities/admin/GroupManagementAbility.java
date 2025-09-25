@@ -105,7 +105,7 @@ public class GroupManagementAbility implements AbilityExtension {
                         if (groupOpt.isPresent()) {
                             ChatGroup group = groupOpt.get();
 
-                            // Проверяем, является ли пользователь создателем группы или администратором чата
+                            // Проверяем, является ли пользователь создателем группы
                             if (!group.getCreatedBy().equals(ctx.user().getId())) {
                                 // TODO Можно добавить дополнительную проверку прав администратора чата
                                 abilityBot.silent().send("❌ Вы можете удалять только группы, созданные вами", ctx.chatId());
@@ -282,7 +282,7 @@ public class GroupManagementAbility implements AbilityExtension {
      * Форматирование информации об участнике группы для отображения
      */
     public static String formatUserInfoForGroup(GroupMember member) {
-        String userName = member.getUser().getUserName();
+        String userName = Helper.escapeMarkdownV2(member.getUser().getUserName());
         String firstName = member.getUser().getFirstName();
         String lastName = member.getUser().getLastName();
 

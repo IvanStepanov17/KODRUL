@@ -9,12 +9,12 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.kodrul.bot.entity.ChatGroup;
 import ru.kodrul.bot.entity.GroupMember;
 import ru.kodrul.bot.utils.Constants;
+import ru.kodrul.bot.utils.Helper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -40,7 +40,6 @@ public class RandomizeService {
 
         for (String arg : arguments) {
             try {
-                // Используем метод с загрузкой участников и пользователей
                 Optional<ChatGroup> groupOpt = groupManagementService.getGroupByNameWithMembersAndUsers(context.chatId(), arg);
                 if (groupOpt.isPresent()) {
                     ChatGroup group = groupOpt.get();
@@ -59,18 +58,11 @@ public class RandomizeService {
                     GroupMember selectedMember = shuffledMembers.get(0);
                     String userName = formatUserName(selectedMember);
 
-                    builder.append(String.format("🏷️ *%s*: %s\n", group.getName(), userName));
+                    builder.append(String.format("🏷️ *%s*: %s\n", Helper.escapeMarkdownV2(group.getName()), Helper.escapeMarkdownV2(userName)));
                     hasValidArguments = true;
 
                 } else {
-                    // Проверяем, не является ли аргумент одним из старых тегов (для обратной совместимости)
-                    String result = handleLegacyTag(arg);
-                    if (result != null) {
-                        builder.append(result).append("\n");
-                        hasValidArguments = true;
-                    } else {
-                        builder.append(String.format("❌ Группа '%s' не найдена\n", arg));
-                    }
+                    builder.append(String.format("❌ Группа '%s' не найдена\n", arg));
                 }
             } catch (Exception e) {
                 log.error("Error processing argument '{}'", arg, e);
@@ -83,24 +75,6 @@ public class RandomizeService {
         } else {
             sender.sendMd(builder.toString(), context.chatId());
         }
-    }
-
-    /**
-     * Метод для обратной совместимости со старыми тегами команд
-     */
-    private String handleLegacyTag(String tag) {
-        Map<String, String> legacyTags = Map.of(
-                "qa", "QA",
-                "front", "Frontend",
-                "back", "Backend",
-                "ann", "Analytics"
-        );
-
-        if (legacyTags.containsKey(tag.toLowerCase())) {
-            return String.format("⚠️ Тег '%s' устарел. Создайте группу с именем '%s'", tag, legacyTags.get(tag.toLowerCase()));
-        }
-
-        return null;
     }
 
     /**
@@ -216,7 +190,7 @@ public class RandomizeService {
                 result.append(String.format("*Команда %d* (%d участников):\n", i + 1, teams.get(i).size()));
 
                 for (GroupMember member : teams.get(i)) {
-                    String userName = formatUserName(member);
+                    String userName = Helper.escapeMarkdownV2(formatUserName(member));
                     result.append("• ").append(userName).append("\n");
                 }
                 result.append("\n");
