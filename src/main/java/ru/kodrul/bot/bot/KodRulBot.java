@@ -12,6 +12,7 @@ import ru.kodrul.bot.abilities.RandomizeAbility;
 import ru.kodrul.bot.abilities.RouletteAbility;
 import ru.kodrul.bot.abilities.admin.ChatMemberAbility;
 import ru.kodrul.bot.abilities.admin.GroupManagementAbility;
+import ru.kodrul.bot.abilities.admin.ScheduleAbility;
 import ru.kodrul.bot.abilities.admin.UserManagementAbility;
 import ru.kodrul.bot.config.BotProperties;
 import ru.kodrul.bot.handlers.ResponseHandler;
@@ -37,7 +38,8 @@ public class KodRulBot extends AbilityBot {
             RandomizeService randomizeService,
             @Lazy GroupManagementAbility groupManagementAbility,
             @Lazy ChatMemberAbility chatMemberAbility,
-            @Lazy UserManagementAbility userManagementAbility
+            @Lazy UserManagementAbility userManagementAbility,
+            @Lazy ScheduleAbility scheduleAbility
     ) {
         super(environment.getProperty("bot.token"), environment.getProperty("bot.name"));
         this.handlers = handlers;
@@ -49,7 +51,8 @@ public class KodRulBot extends AbilityBot {
                 new HelperAbility(this),
                 groupManagementAbility,
                 chatMemberAbility,
-                userManagementAbility
+                userManagementAbility,
+                scheduleAbility
         );
     }
 
