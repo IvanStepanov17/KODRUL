@@ -25,4 +25,8 @@ public interface TelegramUserRepository extends JpaRepository<TelegramUser, Long
 
     @Query("SELECT DISTINCT gm.group.chatId FROM GroupMember gm")
     List<Long> findDistinctChatIds();
+
+    @Modifying
+    @Query("SELECT t FROM TelegramUser t LEFT JOIN FETCH t.groupMemberships WHERE t.userId < 0 AND t.lastSeen < :oneMonthAgo")
+    List<TelegramUser> findOldNegativeUsersWithMembers(@Param("oneMonthAgo") LocalDateTime oneMonthAgo);
 }

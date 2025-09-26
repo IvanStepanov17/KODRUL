@@ -161,6 +161,18 @@ public class UserSyncService {
     }
 
     /**
+     * Очистка временных пользователей (тех что добавили командой /addusers, но они не проявили активность за последний месяц)
+     */
+    @Scheduled(cron = "0 0 3 * * ?")
+    @Transactional
+    public void cleanupTemporaryUsers() {
+        LocalDateTime oneMonthAgo = LocalDateTime.now().minusMonths(1);
+        List<TelegramUser> users = userRepository.findOldNegativeUsersWithMembers(oneMonthAgo);
+        log.info("Cleaned up temporary user: {}", users);
+        userRepository.deleteAll(users);
+    }
+
+    /**
      * Получаем чаты, где есть бот (из таблицы chat_groups)
      */
     private List<Long> getChatsWhereBotIsMember() {
@@ -173,7 +185,7 @@ public class UserSyncService {
     @Transactional
     public void syncChatUsers(Long chatId) {
         try {
-            // TODO реализовать синхронизацию для планировщика
+            // TODO реализовать синхронизацию для планировщика. А нужна ли вообще ежедневная синхронизация всех пользователей?
         } catch (Exception e) {
             log.error("Unexpected error syncing users for chat {}", chatId, e);
         }
