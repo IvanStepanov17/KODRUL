@@ -8,7 +8,6 @@ import org.telegram.abilitybots.api.sender.SilentSender;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kodrul.bot.entity.ChatGroup;
 import ru.kodrul.bot.entity.GroupMember;
-import ru.kodrul.bot.utils.Constants;
 import ru.kodrul.bot.utils.Helper;
 
 import java.util.ArrayList;
@@ -29,7 +28,8 @@ public class RandomizeService {
         String[] args = context.arguments();
 
         if (args.length == 0) {
-            sender.send(Constants.RANDOMIZE_GUIDE, context.chatId());
+            sender.send("Для выбора по одному участнику по каждому направлению укажите по каким направлениям "
+                    + "требуется выбор. Пример: /randomize qa front back ann", context.chatId());
             return;
         }
 

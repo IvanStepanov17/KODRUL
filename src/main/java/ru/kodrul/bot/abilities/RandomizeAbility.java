@@ -1,12 +1,12 @@
 package ru.kodrul.bot.abilities;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
 import org.telegram.abilitybots.api.util.AbilityExtension;
 import ru.kodrul.bot.services.RandomizeService;
-import ru.kodrul.bot.utils.Constants;
 import ru.kodrul.bot.utils.Helper;
 
 import static org.telegram.abilitybots.api.objects.Locality.ALL;
@@ -16,6 +16,7 @@ import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 @RequiredArgsConstructor
 public class RandomizeAbility implements AbilityExtension {
 
+    @Lazy
     private final AbilityBot abilityBot;
     private final RandomizeService randomizeService;
 
@@ -23,7 +24,7 @@ public class RandomizeAbility implements AbilityExtension {
         return Ability
                 .builder()
                 .name("randomize")
-                .info(Constants.RANDOMIZE_GUIDE)
+                .info("Рандомайзер. Использование: /randomize <Наименование групп через пробел>")
                 .locality(ALL)
                 .privacy(PUBLIC)
                 .action(ctx -> randomizeService.replayRandomize(ctx, abilityBot.silent()))

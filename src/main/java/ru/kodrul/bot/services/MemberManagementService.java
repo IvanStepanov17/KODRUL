@@ -1,10 +1,12 @@
-package ru.kodrul.bot.handlers;
+package ru.kodrul.bot.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.objects.MessageContext;
-import org.telegram.abilitybots.api.sender.SilentSender;
 import org.telegram.telegrambots.meta.api.objects.MessageEntity;
 import ru.kodrul.bot.entity.ChatGroup;
 import ru.kodrul.bot.entity.GroupMember;
@@ -12,8 +14,7 @@ import ru.kodrul.bot.entity.TelegramUser;
 import ru.kodrul.bot.parser.MentionParser;
 import ru.kodrul.bot.parser.OperationResult;
 import ru.kodrul.bot.parser.ParsedMention;
-import ru.kodrul.bot.services.GroupManagementService;
-import ru.kodrul.bot.services.UserSyncService;
+import ru.kodrul.bot.utils.Helper;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,15 +22,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Component
+@Service
 @RequiredArgsConstructor
-public class MemberOperationHandler {
+public class MemberManagementService {
 
+    @Lazy
+    private final AbilityBot bot;
     private final GroupManagementService groupService;
     private final UserSyncService userSyncService;
     private final MentionParser mentionParser;
-    private final SilentSender silent;
 
+    @Transactional
     public void handleMemberOperation(MessageContext ctx, boolean isAdd) {
         String[] args = ctx.arguments();
 
@@ -37,7 +40,7 @@ public class MemberOperationHandler {
             String usage = isAdd ?
                     "Использование: /addmembers <имя_группы> @user1 @user2 ..." :
                     "Использование: /removemembers <имя_группы> @user1 @user2 ...";
-            silent.send(usage, ctx.chatId());
+            bot.silent().send(usage, ctx.chatId());
             return;
         }
 
@@ -47,7 +50,7 @@ public class MemberOperationHandler {
         try {
             Optional<ChatGroup> groupOpt = groupService.getGroupByName(chatId, groupName);
             if (groupOpt.isEmpty()) {
-                silent.send("❌ Группа '" + groupName + "' не найдена в этом чате", ctx.chatId());
+                bot.silent().send("❌ Группа '" + groupName + "' не найдена в этом чате", ctx.chatId());
                 return;
             }
 
@@ -61,7 +64,7 @@ public class MemberOperationHandler {
             );
 
             if (mentions.isEmpty()) {
-                silent.send("❌ Не найдено упоминаний пользователей. Упомяните пользователей через @username", ctx.chatId());
+                bot.silent().send("❌ Не найдено упоминаний пользователей. Упомяните пользователей через @username", ctx.chatId());
                 return;
             }
 
@@ -73,7 +76,7 @@ public class MemberOperationHandler {
 
         } catch (Exception e) {
             log.error("Error handling member operation", e);
-            silent.send("❌ Ошибка при обработке операции: " + e.getMessage(), ctx.chatId());
+            bot.silent().send("❌ Ошибка при обработке операции: " + e.getMessage(), ctx.chatId());
         }
     }
 
@@ -170,7 +173,7 @@ public class MemberOperationHandler {
 
         if (!result.getSuccess().isEmpty()) {
             response.append("✅ *Успешно:*\n");
-            result.getSuccess().forEach(user -> response.append("• ").append(user).append("\n"));
+            result.getSuccess().forEach(user -> response.append("• ").append(Helper.escapeMarkdownV2(user)).append("\n"));
             response.append("\n");
         }
 
@@ -183,13 +186,13 @@ public class MemberOperationHandler {
         if (!result.getFailed().isEmpty()) {
             response.append("❌ *Ошибки:*\n");
             result.getFailed().forEach((user, error) ->
-                    response.append("• ").append(user).append(": ").append(error).append("\n"));
+                    response.append("• ").append(Helper.escapeMarkdownV2(user)).append(": ").append(error).append("\n"));
         }
 
         if (result.getSuccess().isEmpty() && result.getSkipped().isEmpty() && result.getFailed().isEmpty()) {
             response.append("ℹ️ Не было обработано ни одного пользователя");
         }
 
-        silent.sendMd(response.toString(), ctx.chatId());
+        bot.silent().sendMd(response.toString(), ctx.chatId());
     }
 }

@@ -23,15 +23,11 @@ public class RouletteService {
     @Transactional
     public void replyRussianRoulette(MessageContext context, SilentSender sender) {
 
-        var users = context.bot().userIds();
         var players = new ArrayList<String>();
         var bulletCount = new ArrayList<Integer>();
 
         Arrays.stream(context.arguments())
                 .forEach(arg -> {
-//                    if (arg.startsWith("@") && !users.containsKey(arg.substring(1).toLowerCase())) {
-//                        sendMessage(context.chatId(), "В списке участников группы не найден пользователь: " + arg);
-//                        return;
                     if (arg.startsWith("@")) {
                         players.add(arg);
                     } else if (!arg.startsWith("@") && NumberUtils.isParsable(arg)) {
@@ -78,14 +74,14 @@ public class RouletteService {
         for (int i = 0; i < players.size(); i++) {
             String player = players.get(i);
             if (chamber.get(i).equals("заряжено")) {
-                sender.send(String.format(Constants.RANDOMIZE_FAILED.get(new Random().nextInt(Constants.RANDOMIZE_FAILED.size())), player), chatId);
+                sender.send(String.format(Constants.ROULETTE_FAILED.get(new Random().nextInt(Constants.ROULETTE_FAILED.size())), player), chatId);
                 if (bullets > 1) {
                     Thread.sleep(1000);
                     sender.send("Состояние обоймы: " + chamber, chatId);
                 }
                 return;
             } else {
-                sender.send(String.format(Constants.RANDOMIZE_SUCCESSFUL.get(new Random().nextInt(Constants.RANDOMIZE_SUCCESSFUL.size())), player), chatId);
+                sender.send(String.format(Constants.ROULETTE_SUCCESSFUL.get(new Random().nextInt(Constants.ROULETTE_SUCCESSFUL.size())), player), chatId);
             }
             Thread.sleep(1500);
         }

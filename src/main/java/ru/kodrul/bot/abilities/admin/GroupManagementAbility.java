@@ -9,7 +9,7 @@ import org.telegram.abilitybots.api.objects.Ability;
 import org.telegram.abilitybots.api.util.AbilityExtension;
 import ru.kodrul.bot.entity.ChatGroup;
 import ru.kodrul.bot.entity.GroupMember;
-import ru.kodrul.bot.handlers.MemberOperationHandler;
+import ru.kodrul.bot.services.MemberManagementService;
 import ru.kodrul.bot.services.GroupManagementService;
 import ru.kodrul.bot.utils.Helper;
 
@@ -28,7 +28,7 @@ public class GroupManagementAbility implements AbilityExtension {
     @Lazy
     private final AbilityBot abilityBot;
     private final GroupManagementService groupService;
-    private final MemberOperationHandler memberOperationHandler;
+    private final MemberManagementService memberManagementService;
 
     public Ability createGroupAbility() {
         return Ability.builder()
@@ -181,7 +181,7 @@ public class GroupManagementAbility implements AbilityExtension {
                 .info("Добавить участников в группу")
                 .locality(GROUP)
                 .privacy(ADMIN)
-                .action(ctx -> memberOperationHandler.handleMemberOperation(ctx, true))
+                .action(ctx -> memberManagementService.handleMemberOperation(ctx, true))
                 .build();
     }
 
@@ -191,7 +191,7 @@ public class GroupManagementAbility implements AbilityExtension {
                 .info("Удалить участников из группы")
                 .locality(GROUP)
                 .privacy(ADMIN)
-                .action(ctx -> memberOperationHandler.handleMemberOperation(ctx, false))
+                .action(ctx -> memberManagementService.handleMemberOperation(ctx, false))
                 .build();
     }
 

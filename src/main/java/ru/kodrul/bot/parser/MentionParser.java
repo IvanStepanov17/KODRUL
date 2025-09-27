@@ -2,7 +2,6 @@ package ru.kodrul.bot.parser;
 
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.MessageEntity;
-import ru.kodrul.bot.utils.Helper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,14 +28,14 @@ public class MentionParser {
                     // Упоминание с user_id
                     mentions.add(new ParsedMention(
                             entity.getUser().getId(),
-                            Helper.escapeMarkdownV2(entity.getUser().getUserName()),
+                            entity.getUser().getUserName(),
                             mentionText
                     ));
                 } else if ("mention".equals(entity.getType())) {
                     // Упоминание по username (@username)
                     String username = mentionText.startsWith("@") ?
                             mentionText.substring(1) : mentionText;
-                    mentions.add(new ParsedMention(null, Helper.escapeMarkdownV2(username), mentionText));
+                    mentions.add(new ParsedMention(null, username, mentionText));
                 }
             }
         }

@@ -17,7 +17,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class TelegramBotService {
+public class ChatMemberService {
 
     private final AbilityBot abilityBot;
 
