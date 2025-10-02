@@ -7,6 +7,9 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.kodrul.bot.entity.ChatGroup;
 import ru.kodrul.bot.entity.GroupMember;
 import ru.kodrul.bot.entity.TelegramUser;
+import ru.kodrul.bot.exceptions.GroupAlreadyExistsException;
+import ru.kodrul.bot.exceptions.UserAlreadyInGroupException;
+import ru.kodrul.bot.exceptions.UserNotFoundException;
 import ru.kodrul.bot.repository.ChatGroupRepository;
 import ru.kodrul.bot.repository.GroupMemberRepository;
 import ru.kodrul.bot.repository.TelegramUserRepository;
@@ -31,7 +34,7 @@ public class GroupManagementService {
     @Transactional
     public ChatGroup createGroup(String name, String description, Long chatId, String chatTitle, Long createdBy) {
         if (groupRepository.existsByChatIdAndName(chatId, name)) {
-            throw new IllegalArgumentException("Группа с именем '" + name + "' уже существует в этом чате");
+            throw new GroupAlreadyExistsException(name, chatId);
         }
 
         ChatGroup group = new ChatGroup();
@@ -47,14 +50,14 @@ public class GroupManagementService {
     @Transactional
     public void addUserToGroup(Long groupId, Long userId) {
         if (memberRepository.existsByGroupIdAndUserId(groupId, userId)) {
-            throw new IllegalArgumentException("Пользователь уже в группе");
+            throw new UserAlreadyInGroupException(userId, groupId);
         }
 
         ChatGroup group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Группа не найдена"));
 
         TelegramUser user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         GroupMember member = new GroupMember();
         member.setGroup(group);
@@ -164,5 +167,29 @@ public class GroupManagementService {
 
     public boolean isUserInGroup(Long groupId, Long userId) {
         return memberRepository.existsByGroupIdAndUserId(groupId, userId);
+    }
+
+    public String getTagUsersMessage(ChatGroup chatGroup) {
+        try {
+            List<GroupMember> members = chatGroup.getMembers();
+
+            if (members.isEmpty()) {
+                log.warn("Group {} is empty, skipping post", chatGroup.getName());
+                return null;
+            }
+
+            StringBuilder message = new StringBuilder();
+
+            for (GroupMember member : members) {
+                String username = member.getUser().getUserName();
+                if (username != null && !username.isEmpty()) {
+                    message.append("@").append(username).append(" ");
+                }
+            }
+            return message.toString();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error sending scheduled message: " + e.getMessage(), e);
+        }
     }
 }

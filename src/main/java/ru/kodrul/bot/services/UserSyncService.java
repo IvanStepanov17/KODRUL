@@ -12,6 +12,7 @@ import ru.kodrul.bot.repository.TelegramUserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
 @Service
@@ -130,7 +131,9 @@ public class UserSyncService {
     }
 
     private Long generateTemporaryUserId() {
-        return -Math.abs(System.currentTimeMillis() % 1_000_000_000L);
+        long timestamp = System.currentTimeMillis();
+        int random = ThreadLocalRandom.current().nextInt(1_000_000_000);
+        return -Math.abs(timestamp + random);
     }
 
 

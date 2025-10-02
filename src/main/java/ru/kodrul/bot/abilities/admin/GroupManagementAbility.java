@@ -6,7 +6,10 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
+import org.telegram.abilitybots.api.objects.MessageContext;
 import org.telegram.abilitybots.api.util.AbilityExtension;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.kodrul.bot.entity.ChatGroup;
 import ru.kodrul.bot.entity.GroupMember;
 import ru.kodrul.bot.services.MemberManagementService;
@@ -50,7 +53,7 @@ public class GroupManagementAbility implements AbilityExtension {
                         String chatTitle = ctx.update().getMessage().getChat().getTitle();
 
                         ChatGroup group = groupService.createGroup(name, description, ctx.chatId(), chatTitle, ctx.user().getId());
-                        abilityBot.silent().send(
+                        abilityBot.silent().sendMd(
                                 "✅ Группа создана!\n" + groupService.formatGroupInfo(group),
                                 ctx.chatId()
                         );
@@ -100,7 +103,7 @@ public class GroupManagementAbility implements AbilityExtension {
 
                     try {
                         String groupName = args[0];
-                        Optional<ChatGroup> groupOpt = groupService.getGroupByName(ctx.chatId(), groupName);
+                        Optional<ChatGroup> groupOpt = groupService.getGroupByNameWithMembersAndUsers(ctx.chatId(), groupName);
 
                         if (groupOpt.isPresent()) {
                             ChatGroup group = groupOpt.get();
@@ -115,7 +118,7 @@ public class GroupManagementAbility implements AbilityExtension {
                             String groupInfo = groupService.formatGroupInfo(group);
                             groupService.deleteGroup(group.getId());
 
-                            abilityBot.silent().send("🗑️ Группа успешно удалена:\n" + groupInfo, ctx.chatId());
+                            abilityBot.silent().sendMd("🗑️ Группа успешно удалена:\n" + groupInfo, ctx.chatId());
                         } else {
                             abilityBot.silent().send("❌ Группа '" + groupName + "' не найдена в этом чате", ctx.chatId());
                         }
@@ -231,7 +234,7 @@ public class GroupManagementAbility implements AbilityExtension {
                 .build();
     }
 
-    public Ability groupChatMembersAbility() {
+    public Ability groupMembersAbility() {
         return Ability.builder()
                 .name("groupmembers")
                 .info("Получить список участников группы")
@@ -241,7 +244,7 @@ public class GroupManagementAbility implements AbilityExtension {
                 .action(ctx -> {
                     String[] args = ctx.arguments();
                     if (args.length < 1) {
-                        abilityBot.silent().send("Использование: /groupmembers <название_группы>", ctx.chatId());
+                        sendThreadAwareMessage(ctx, "Использование: /groupmembers <название_группы>");
                         return;
                     }
 
@@ -258,21 +261,20 @@ public class GroupManagementAbility implements AbilityExtension {
                             }
 
                             StringBuilder response = new StringBuilder();
-                            response.append("👥 **Участники группы '").append(groupName).append("':**\n\n");
+                            response.append("👥 *Участники группы '").append(groupName).append("':*\n\n");
 
                             for (int i = 0; i < group.getMembers().size(); i++) {
                                 GroupMember member = group.getMembers().get(i);
                                 String userInfo = formatUserInfoForGroup(member);
                                 response.append(i + 1).append(". ").append(userInfo).append("\n");
                             }
-
-                            abilityBot.silent().send(response.toString(), ctx.chatId());
+                            sendThreadAwareMessage(ctx, response.toString());
                         } else {
-                            abilityBot.silent().send("❌ Группа '" + groupName + "' не найдена", ctx.chatId());
+                            sendThreadAwareMessage(ctx, "❌ Группа '" + groupName + "' не найдена");
                         }
                     } catch (Exception e) {
                         log.error("Error getting group members", e);
-                        abilityBot.silent().send("❌ Ошибка при получении участников группы: " + e.getMessage(), ctx.chatId());
+                        sendThreadAwareMessage(ctx, "❌ Ошибка при получении участников группы: " + e.getMessage());
                     }
                 })
                 .build();
@@ -288,12 +290,12 @@ public class GroupManagementAbility implements AbilityExtension {
 
         StringBuilder userInfo = new StringBuilder();
 
-        if (userName != null && !userName.isEmpty()) {
+        if (!userName.isEmpty()) {
             userInfo.append("@").append(userName);
         } else {
             userInfo.append(firstName != null ? firstName : "");
             if (lastName != null && !lastName.isEmpty()) {
-                if (userInfo.length() > 0) userInfo.append(" ");
+                if (!userInfo.isEmpty()) userInfo.append(" ");
                 userInfo.append(lastName);
             }
         }
@@ -305,6 +307,83 @@ public class GroupManagementAbility implements AbilityExtension {
         }
 
         return userInfo.toString();
+    }
+
+    public Ability tagUserAbility() {
+        return Ability.builder()
+                .name("tag")
+                .info("Тэгнуть участников группы")
+                .locality(GROUP)
+                .privacy(PUBLIC)
+                .input(1)
+                .action(ctx -> {
+                    String[] args = ctx.arguments();
+                    if (args.length != 1) {
+                        sendToThread(ctx.chatId(),
+                                ctx.update().getMessage().getMessageThreadId(),
+                                "Использование: /tag <название группы>");
+                        return;
+                    }
+
+                    try {
+                        Long chatId = ctx.chatId();
+                        Integer messageThreadId = ctx.update().getMessage().getMessageThreadId();
+                        String groupName = args[0];
+
+                        log.info("Tag command executed in chat: {}, thread: {} for group: {}",
+                                chatId, messageThreadId, groupName);
+
+                        Optional<ChatGroup> groupOpt = groupService.getGroupByNameWithMembersAndUsers(chatId, groupName);
+
+                        if (groupOpt.isPresent()) {
+                            ChatGroup chatGroup = groupOpt.get();
+                            String text = groupService.getTagUsersMessage(chatGroup);
+
+                            if (text != null && !text.trim().isEmpty()) {
+                                sendToThread(chatId, messageThreadId, text);
+                            } else {
+                                sendToThread(chatId, messageThreadId, "❌ Группа пуста");
+                            }
+                        } else {
+                            sendToThread(chatId, messageThreadId,
+                                    "❌ Группа '" + groupName + "' не найдена в этом чате");
+                        }
+
+                    } catch (Exception e) {
+                        log.error("Error in tag command for chat {}: {}", ctx.chatId(), e.getMessage(), e);
+                        sendToThread(ctx.chatId(),
+                                ctx.update().getMessage().getMessageThreadId(),
+                                "❌ Ошибка: " + e.getMessage());
+                    }
+                })
+                .build();
+    }
+
+    private void sendThreadAwareMessage(MessageContext ctx, String text) {
+        Long chatId = ctx.chatId();
+        Integer messageThreadId = ctx.update().getMessage().getMessageThreadId();
+        sendToThread(chatId, messageThreadId, text);
+    }
+
+    /**
+    * Отправка сообщения в конкретный топик супергруппы
+    */
+    private void sendToThread(Long chatId, Integer messageThreadId, String text) {
+        try {
+            SendMessage message = new SendMessage();
+            message.setChatId(chatId.toString());
+            message.setText(text);
+
+            if (messageThreadId != null) {
+                message.setMessageThreadId(messageThreadId);
+            }
+
+            abilityBot.execute(message);
+            log.info("Message sent to chat: {}, thread: {}", chatId, messageThreadId);
+        } catch (TelegramApiException e) {
+            log.error("Failed to send message to chat {} thread {}: {}",
+                    chatId, messageThreadId, e.getMessage());
+        }
     }
 
     private String formatGroupInfoWithMembers(ChatGroup group) {

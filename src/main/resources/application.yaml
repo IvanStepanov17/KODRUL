@@ -15,9 +15,15 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-    show-sql: true
+    show-sql: false
   liquibase:
     change-log: db.changelog/db.changelog-master.yaml
+
+bot:
+  rate-limiting:
+    messages-per-second: 1
+    max-messages-per-minute: 20
+    enabled: false
 
 logging:
   level:
