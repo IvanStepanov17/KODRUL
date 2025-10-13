@@ -9,8 +9,8 @@ spring:
     hikari:
       maximum-pool-size: 10
   jpa:
-    hibernate:
-      ddl-auto: update
+#    hibernate:
+#      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect

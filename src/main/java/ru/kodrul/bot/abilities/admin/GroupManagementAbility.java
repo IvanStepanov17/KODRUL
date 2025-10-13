@@ -39,7 +39,7 @@ public class GroupManagementAbility implements AbilityExtension {
                 .info("Создать новую группу участников")
                 .locality(GROUP)
                 .privacy(ADMIN)
-                .input(2)
+                .input(1)
                 .action(ctx -> {
                     String[] args = ctx.arguments();
                     if (args.length < 1) {

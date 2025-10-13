@@ -10,7 +10,6 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 @Data
 @Entity
@@ -26,14 +25,17 @@ public class ScheduledPost {
     @Column(name = "group_name", nullable = false)
     private String groupName;
 
-    @Column(name = "scheduled_time", nullable = false)
-    private LocalTime scheduledTime; // Время отправки (например, 09:00)
+    @Column(name = "cron_expression", nullable = false, length = 50)
+    private String cronExpression;
+
+    @Column(name = "description")
+    private String description;
 
     @Column(name = "message_text", length = 1000)
     private String messageText;
 
     @Column(name = "image_url")
-    private String imageUrl; // URL изображения (может быть null)
+    private String imageUrl;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;

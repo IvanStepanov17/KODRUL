@@ -12,7 +12,7 @@ import ru.kodrul.bot.entity.ChatGroup;
 import ru.kodrul.bot.entity.GroupMember;
 import ru.kodrul.bot.entity.ScheduledPost;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,21 +25,25 @@ public class ScheduledMessageService {
     private final GroupManagementService groupManagementService;
     private final AbilityBot abilityBot;
 
+    /**
+     * Проверяем расписания каждую минуту
+     */
     @Scheduled(cron = "0 * * * * ?")
     public void checkScheduledPosts() {
-        LocalTime currentTime = LocalTime.now().withSecond(0).withNano(0);
-        List<ScheduledPost> schedules = scheduledPostService.getSchedulesByTime(currentTime);
+        LocalDateTime currentDateTime = LocalDateTime.now().withSecond(0).withNano(0);
+        List<ScheduledPost> activeSchedules = scheduledPostService.getActiveSchedules();
 
-        log.debug("Checking schedules for time: {}, found: {}", currentTime, schedules.size());
+        log.debug("Checking {} active schedules for time: {}", activeSchedules.size(), currentDateTime);
 
-        for (ScheduledPost schedule : schedules) {
+        for (ScheduledPost schedule : activeSchedules) {
             try {
-                sendScheduledMessage(schedule);
-                scheduledPostService.markAsSent(schedule.getId());
-                log.info("Successfully sent scheduled message for group {} in chat {}",
-                        schedule.getGroupName(), schedule.getChatId());
+                if (scheduledPostService.shouldExecute(schedule, currentDateTime)) {
+                    sendScheduledMessage(schedule);
+                    scheduledPostService.markAsSent(schedule.getId());
+                    log.info("Executed schedule: {} for group {}", schedule.getId(), schedule.getGroupName());
+                }
             } catch (Exception e) {
-                log.error("Failed to send scheduled message for schedule {}: {}", schedule.getId(), e.getMessage());
+                log.error("Failed to process schedule {}: {}", schedule.getId(), e.getMessage());
             }
         }
     }
@@ -63,7 +67,6 @@ public class ScheduledMessageService {
             }
 
             StringBuilder message = new StringBuilder();
-
             for (GroupMember member : members) {
                 String username = member.getUser().getUserName();
                 if (username != null && !username.isEmpty()) {
@@ -77,11 +80,14 @@ public class ScheduledMessageService {
 
             String finalMessage = message.toString();
 
-            // Если есть изображение, отправляем как фото с подписью
+            if (finalMessage.length() > 4000) {
+                finalMessage = finalMessage.substring(0, 4000) + "...";
+                log.warn("Message truncated for schedule {}", schedule.getId());
+            }
+
             if (schedule.getImageUrl() != null && !schedule.getImageUrl().isEmpty()) {
                 sendPhotoMessage(schedule.getChatId(), schedule.getImageUrl(), finalMessage);
             } else {
-                // Иначе отправляем текстовое сообщение
                 sendTextMessage(schedule.getChatId(), finalMessage);
             }
 
@@ -102,18 +108,19 @@ public class ScheduledMessageService {
     private void sendPhotoMessage(Long chatId, String imageUrl, String caption) {
         try {
             InputFile photo = new InputFile(imageUrl);
-
             SendPhoto sendPhoto = new SendPhoto();
             sendPhoto.setChatId(chatId.toString());
             sendPhoto.setPhoto(photo);
-            sendPhoto.setCaption(caption.length() > 1024 ? caption.substring(0, 1020) + "..." : caption);
+
+            if (caption.length() > 1024) {
+                caption = caption.substring(0, 1020) + "...";
+            }
+            sendPhoto.setCaption(caption);
 
             abilityBot.execute(sendPhoto);
 
         } catch (TelegramApiException e) {
             log.error("Failed to send photo message to chat {}: {}", chatId, e.getMessage());
-
-            // Если не удалось отправить фото, отправляем текстовое сообщение со ссылкой на изображение
             String fallbackMessage = caption + "\n\n🖼️ Изображение: " + imageUrl;
             sendTextMessage(chatId, fallbackMessage);
         } catch (Exception e) {

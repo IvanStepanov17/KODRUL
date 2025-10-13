@@ -11,7 +11,6 @@ import ru.kodrul.bot.entity.GroupMember;
 import ru.kodrul.bot.utils.Helper;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -35,10 +34,9 @@ public class RandomizeService {
 
         StringBuilder builder = new StringBuilder().append("🎲 Результаты рандомизации:\n\n");
 
-        List<String> arguments = Arrays.asList(args);
         boolean hasValidArguments = false;
 
-        for (String arg : arguments) {
+        for (String arg : args) {
             try {
                 Optional<ChatGroup> groupOpt = groupManagementService.getGroupByNameWithMembersAndUsers(context.chatId(), arg);
                 if (groupOpt.isPresent()) {
