@@ -14,7 +14,7 @@ import ru.kodrul.bot.entity.TelegramUser;
 import ru.kodrul.bot.parser.MentionParser;
 import ru.kodrul.bot.parser.OperationResult;
 import ru.kodrul.bot.parser.ParsedMention;
-import ru.kodrul.bot.utils.Helper;
+import ru.kodrul.bot.utils.EscapeHelper;
 
 import java.util.List;
 import java.util.Optional;
@@ -173,7 +173,7 @@ public class MemberManagementService {
 
         if (!result.getSuccess().isEmpty()) {
             response.append("✅ *Успешно:*\n");
-            result.getSuccess().forEach(user -> response.append("• ").append(Helper.escapeMarkdownV2(user)).append("\n"));
+            result.getSuccess().forEach(user -> response.append("• ").append(EscapeHelper.escapeMarkdownV2(user)).append("\n"));
             response.append("\n");
         }
 
@@ -186,7 +186,7 @@ public class MemberManagementService {
         if (!result.getFailed().isEmpty()) {
             response.append("❌ *Ошибки:*\n");
             result.getFailed().forEach((user, error) ->
-                    response.append("• ").append(Helper.escapeMarkdownV2(user)).append(": ").append(error).append("\n"));
+                    response.append("• ").append(EscapeHelper.escapeMarkdownV2(user)).append(": ").append(error).append("\n"));
         }
 
         if (result.getSuccess().isEmpty() && result.getSkipped().isEmpty() && result.getFailed().isEmpty()) {

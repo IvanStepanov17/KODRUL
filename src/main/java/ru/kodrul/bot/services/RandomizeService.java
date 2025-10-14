@@ -8,7 +8,7 @@ import org.telegram.abilitybots.api.sender.SilentSender;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kodrul.bot.entity.ChatGroup;
 import ru.kodrul.bot.entity.GroupMember;
-import ru.kodrul.bot.utils.Helper;
+import ru.kodrul.bot.utils.EscapeHelper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,7 +56,7 @@ public class RandomizeService {
                     GroupMember selectedMember = shuffledMembers.get(0);
                     String userName = formatUserName(selectedMember);
 
-                    builder.append(String.format("🏷️ *%s*: %s\n", Helper.escapeMarkdownV2(group.getName()), Helper.escapeMarkdownV2(userName)));
+                    builder.append(String.format("🏷️ *%s*: %s\n", EscapeHelper.escapeMarkdownV2(group.getName()), EscapeHelper.escapeMarkdownV2(userName)));
                     hasValidArguments = true;
 
                 } else {
@@ -188,7 +188,7 @@ public class RandomizeService {
                 result.append(String.format("*Команда %d* (%d участников):\n", i + 1, teams.get(i).size()));
 
                 for (GroupMember member : teams.get(i)) {
-                    String userName = Helper.escapeMarkdownV2(formatUserName(member));
+                    String userName = EscapeHelper.escapeMarkdownV2(formatUserName(member));
                     result.append("• ").append(userName).append("\n");
                 }
                 result.append("\n");

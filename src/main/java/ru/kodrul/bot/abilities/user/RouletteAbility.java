@@ -1,4 +1,4 @@
-package ru.kodrul.bot.abilities;
+package ru.kodrul.bot.abilities.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Lazy;

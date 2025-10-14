@@ -2,6 +2,7 @@ package ru.kodrul.bot.abilities.admin;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
@@ -9,6 +10,7 @@ import org.telegram.abilitybots.api.objects.Locality;
 import org.telegram.abilitybots.api.objects.MessageContext;
 import org.telegram.abilitybots.api.util.AbilityExtension;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMemberCount;
+import ru.kodrul.bot.services.SendService;
 
 import java.util.Optional;
 
@@ -21,7 +23,9 @@ import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 @RequiredArgsConstructor
 public class ChatMemberAbility implements AbilityExtension {
 
+    @Lazy
     private final AbilityBot abilityBot;
+    private final SendService sendService;
 
     public Ability getChatMembers() {
         return Ability.builder()
@@ -35,8 +39,8 @@ public class ChatMemberAbility implements AbilityExtension {
                     countRequest.setChatId(chatId);
                     Optional<Integer> memberCount = abilityBot.silent().execute(countRequest);
                     memberCount.ifPresentOrElse(
-                            count -> abilityBot.silent().send("Количество участников: " + count, ctx.chatId()),
-                            () -> abilityBot.silent().send("Ошибка при получении количества участников", ctx.chatId()));
+                            count -> sendService.sendMessageToThread(ctx, "Количество участников: " + count),
+                            () -> sendService.sendMessageToThread(ctx, "Ошибка при получении количества участников"));
 
                 })
                 .build();
@@ -56,14 +60,18 @@ public class ChatMemberAbility implements AbilityExtension {
         try {
             // TODO реализовать список участников чата
             var user = ctx.user();
-            String membersInfo = String.format("👥 Информация о чате:\n\n👤 Вы: %s %s (ID: %d)\n\n" +
-                            "Для получения полного списка участников используйте синхронизацию",
+            String membersInfo = String.format("""
+                            👥 Информация о чате:
+
+                            👤 Вы: %s %s (ID: %d)
+
+                            Для получения полного списка участников используйте синхронизацию""",
                     user.getFirstName(), user.getLastName(), user.getId());
 
-            abilityBot.silent().send(membersInfo, ctx.chatId());
+            sendService.sendMessageToThread(ctx, membersInfo);
 
         } catch (Exception e) {
-            abilityBot.silent().send("❌ Ошибка при получении информации о чате", ctx.chatId());
+            sendService.sendMessageToThread(ctx, "❌ Ошибка при получении информации о чате");
         }
     }
 }

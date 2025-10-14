@@ -1,4 +1,4 @@
-package ru.kodrul.bot.abilities;
+package ru.kodrul.bot.abilities.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Lazy;
@@ -7,7 +7,7 @@ import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
 import org.telegram.abilitybots.api.util.AbilityExtension;
 import ru.kodrul.bot.services.RandomizeService;
-import ru.kodrul.bot.utils.Helper;
+import ru.kodrul.bot.utils.EscapeHelper;
 
 import static org.telegram.abilitybots.api.objects.Locality.ALL;
 import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
@@ -77,7 +77,7 @@ public class RandomizeAbility implements AbilityExtension {
                     try {
                         String groupName = args[0];
                         int teamCount = Integer.parseInt(args[1]);
-                        randomizeService.distributeGroupToTeams(ctx, abilityBot.silent(), Helper.escapeMarkdownV2(groupName), teamCount);
+                        randomizeService.distributeGroupToTeams(ctx, abilityBot.silent(), EscapeHelper.escapeMarkdownV2(groupName), teamCount);
                     } catch (NumberFormatException e) {
                         abilityBot.silent().send("❌ Количество команд должно быть числом", ctx.chatId());
                     } catch (Exception e) {

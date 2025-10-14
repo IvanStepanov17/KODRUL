@@ -2,15 +2,16 @@ package ru.kodrul.bot.abilities.admin;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
-import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
+import org.telegram.abilitybots.api.objects.MessageContext;
 import org.telegram.abilitybots.api.util.AbilityExtension;
 import ru.kodrul.bot.entity.ChatGroup;
 import ru.kodrul.bot.entity.ScheduledPost;
 import ru.kodrul.bot.services.GroupManagementService;
 import ru.kodrul.bot.services.ScheduledPostService;
+import ru.kodrul.bot.services.SendService;
+import ru.kodrul.bot.utils.Constants;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,10 +25,9 @@ import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 @RequiredArgsConstructor
 public class ScheduleAbility implements AbilityExtension {
 
-    @Lazy
-    private final AbilityBot abilityBot;
     private final ScheduledPostService scheduledPostService;
     private final GroupManagementService groupManagementService;
+    private final SendService sendService;
 
     public Ability createScheduleAbility() {
         return Ability.builder()
@@ -40,7 +40,7 @@ public class ScheduleAbility implements AbilityExtension {
                     String[] parts = fullText.split("\\s+", 4);
 
                     if (parts.length < 4) {
-                        sendScheduleHelp(ctx.chatId());
+                        sendScheduleHelp(ctx);
                         return;
                     }
 
@@ -82,13 +82,13 @@ public class ScheduleAbility implements AbilityExtension {
                                 schedule.getId()
                         );
 
-                        abilityBot.silent().sendMd(response, ctx.chatId());
+                        sendService.sendMessageToThread(ctx, response, Constants.PARSE_MARKDOWN);
 
                     } catch (IllegalArgumentException e) {
-                        abilityBot.silent().send("❌ " + e.getMessage() + "\n\nИспользуйте /schedulehelp для справки", ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "❌ " + e.getMessage() + "\n\nИспользуйте /schedulehelp для справки");
                     } catch (Exception e) {
                         log.error("Error creating schedule", e);
-                        abilityBot.silent().send("❌ Ошибка при создании расписания: " + e.getMessage(), ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "❌ Ошибка при создании расписания: " + e.getMessage());
                     }
                 })
                 .build();
@@ -100,7 +100,7 @@ public class ScheduleAbility implements AbilityExtension {
                 .info("Показать справку по созданию расписаний")
                 .locality(GROUP)
                 .privacy(PUBLIC)
-                .action(ctx -> sendScheduleHelp(ctx.chatId()))
+                .action(this::sendScheduleHelp)
                 .build();
     }
 
@@ -114,7 +114,7 @@ public class ScheduleAbility implements AbilityExtension {
                     List<ScheduledPost> schedules = scheduledPostService.getActiveSchedulesForChat(ctx.chatId());
 
                     if (schedules.isEmpty()) {
-                        abilityBot.silent().send("📭 В этом чате нет активных расписаний", ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "📭 В этом чате нет активных расписаний");
                         return;
                     }
 
@@ -141,7 +141,7 @@ public class ScheduleAbility implements AbilityExtension {
                         response.append("\n");
                     }
 
-                    abilityBot.silent().send(response.toString(), ctx.chatId());
+                    sendService.sendMessageToThread(ctx, response.toString());
                 })
                 .build();
     }
@@ -156,7 +156,7 @@ public class ScheduleAbility implements AbilityExtension {
                 .action(ctx -> {
                     String[] args = ctx.arguments();
                     if (args.length < 1) {
-                        abilityBot.silent().send("Использование: /listgroupschedules <название_группы>", ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "Использование: /listgroupschedules <название_группы>");
                         return;
                     }
 
@@ -166,14 +166,14 @@ public class ScheduleAbility implements AbilityExtension {
 
                         Optional<ChatGroup> groupOpt = groupManagementService.getGroupByName(chatId, groupName);
                         if (groupOpt.isEmpty()) {
-                            abilityBot.silent().send("❌ Группа '" + groupName + "' не найдена в этом чате", ctx.chatId());
+                            sendService.sendMessageToThread(ctx, "❌ Группа '" + groupName + "' не найдена в этом чате");
                             return;
                         }
 
                         List<ScheduledPost> schedules = scheduledPostService.getActiveSchedulesForGroup(chatId, groupName);
 
                         if (schedules.isEmpty()) {
-                            abilityBot.silent().send("📭 В группе '" + groupName + "' нет активных расписаний", ctx.chatId());
+                            sendService.sendMessageToThread(ctx, "📭 В группе '" + groupName + "' нет активных расписаний");
                             return;
                         }
 
@@ -207,11 +207,11 @@ public class ScheduleAbility implements AbilityExtension {
                                 .append("/deleteschedule <ID> - удалить\n")
                                 .append("/scheduleinfo <ID> - подробная информация");
 
-                        abilityBot.silent().sendMd(response.toString(), ctx.chatId());
+                        sendService.sendMessageToThread(ctx, response.toString(), Constants.PARSE_MARKDOWN);
 
                     } catch (Exception e) {
-                        log.error("Error listing group schedules for chat {}: {}", ctx.chatId(), e.getMessage(), e);
-                        abilityBot.silent().send("❌ Ошибка при получении расписаний группы: " + e.getMessage(), ctx.chatId());
+                        log.error("Error listing group schedules for chat {}", e.getMessage(), e);
+                        sendService.sendMessageToThread(ctx, "❌ Ошибка при получении расписаний группы: " + e.getMessage());
                     }
                 })
                 .build();
@@ -227,7 +227,7 @@ public class ScheduleAbility implements AbilityExtension {
                 .action(ctx -> {
                     String[] args = ctx.arguments();
                     if (args.length < 2) {
-                        abilityBot.silent().send("Использование: /toggleschedule <ID расписания> <on|off>", ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "Использование: /toggleschedule <ID расписания> <on|off>");
                         return;
                     }
 
@@ -237,17 +237,17 @@ public class ScheduleAbility implements AbilityExtension {
 
                         scheduledPostService.toggleSchedule(scheduleId, isActive);
 
-                        abilityBot.silent().send(
-                                isActive ? "✅ Расписание включено" : "⏸️ Расписание отключено",
-                                ctx.chatId()
+                        sendService.sendMessageToThread(
+                                ctx, 
+                                isActive ? "✅ Расписание включено" : "⏸️ Расписание отключено"
                         );
 
                     } catch (NumberFormatException e) {
-                        abilityBot.silent().send("❌ ID расписания должен быть числом", ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "❌ ID расписания должен быть числом");
                     } catch (IllegalArgumentException e) {
-                        abilityBot.silent().send("❌ " + e.getMessage(), ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "❌ " + e.getMessage());
                     } catch (Exception e) {
-                        abilityBot.silent().send("❌ Ошибка при изменении расписания", ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "❌ Ошибка при изменении расписания");
                     }
                 })
                 .build();
@@ -263,7 +263,7 @@ public class ScheduleAbility implements AbilityExtension {
                 .action(ctx -> {
                     String[] args = ctx.arguments();
                     if (args.length < 1) {
-                        abilityBot.silent().send("Использование: /deleteschedule <ID расписания>", ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "Использование: /deleteschedule <ID расписания>");
                         return;
                     }
 
@@ -272,14 +272,14 @@ public class ScheduleAbility implements AbilityExtension {
 
                         scheduledPostService.deleteSchedule(scheduleId);
 
-                        abilityBot.silent().send("🗑️ Расписание удалено", ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "🗑️ Расписание удалено");
 
                     } catch (NumberFormatException e) {
-                        abilityBot.silent().send("❌ ID расписания должен быть числом", ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "❌ ID расписания должен быть числом");
                     } catch (IllegalArgumentException e) {
-                        abilityBot.silent().send("❌ " + e.getMessage(), ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "❌ " + e.getMessage());
                     } catch (Exception e) {
-                        abilityBot.silent().send("❌ Ошибка при удалении расписания", ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "❌ Ошибка при удалении расписания");
                     }
                 })
                 .build();
@@ -295,7 +295,7 @@ public class ScheduleAbility implements AbilityExtension {
                 .action(ctx -> {
                     String[] args = ctx.arguments();
                     if (args.length < 1) {
-                        abilityBot.silent().send("Использование: /scheduleinfo <ID расписания>", ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "Использование: /scheduleinfo <ID расписания>");
                         return;
                     }
 
@@ -322,21 +322,21 @@ public class ScheduleAbility implements AbilityExtension {
                                 response.append("✅ *Последняя отправка:* ").append(schedule.getLastSent()).append("\n");
                             }
 
-                            abilityBot.silent().sendMd(response.toString(), ctx.chatId());
+                            sendService.sendMessageToThread(ctx, response.toString(), Constants.PARSE_MARKDOWN);
                         } else {
-                            abilityBot.silent().send("❌ Расписание с ID " + scheduleId + " не найдено", ctx.chatId());
+                            sendService.sendMessageToThread(ctx, "❌ Расписание с ID " + scheduleId + " не найдено");
                         }
 
                     } catch (NumberFormatException e) {
-                        abilityBot.silent().send("❌ ID расписания должен быть числом", ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "❌ ID расписания должен быть числом");
                     } catch (Exception e) {
-                        abilityBot.silent().send("❌ Ошибка при получении информации о расписании", ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "❌ Ошибка при получении информации о расписании");
                     }
                 })
                 .build();
     }
 
-    private void sendScheduleHelp(Long chatId) {
+    private void sendScheduleHelp(MessageContext ctx) {
         String helpText = """
             📅 *Создание расписаний*
             
@@ -373,6 +373,6 @@ public class ScheduleAbility implements AbilityExtension {
             *Для URL изображения добавьте его в конце*
             """;
 
-        abilityBot.silent().sendMd(helpText, chatId);
+        sendService.sendMessageToThread(ctx, helpText, Constants.PARSE_MARKDOWN);
     }
 }

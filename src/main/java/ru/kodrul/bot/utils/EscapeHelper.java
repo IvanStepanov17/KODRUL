@@ -1,6 +1,6 @@
 package ru.kodrul.bot.utils;
 
-public class Helper {
+public class EscapeHelper {
 
     /**
      * Экранирование специальных символов для MarkdownV2

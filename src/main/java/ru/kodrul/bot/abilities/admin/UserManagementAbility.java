@@ -1,14 +1,13 @@
 package ru.kodrul.bot.abilities.admin;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
-import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
 import org.telegram.abilitybots.api.util.AbilityExtension;
 import ru.kodrul.bot.entity.TelegramUser;
 import ru.kodrul.bot.parser.MentionParser;
 import ru.kodrul.bot.parser.ParsedMention;
+import ru.kodrul.bot.services.SendService;
 import ru.kodrul.bot.services.UserSyncService;
 
 import java.util.List;
@@ -20,10 +19,9 @@ import static org.telegram.abilitybots.api.objects.Privacy.ADMIN;
 @RequiredArgsConstructor
 public class UserManagementAbility implements AbilityExtension {
 
-    @Lazy
-    private final AbilityBot abilityBot;
     private final UserSyncService userSyncService;
     private final MentionParser mentionParser;
+    private final SendService sendService;
 
     /**
      * Команда для ручного добавления пользователей по username
@@ -42,7 +40,7 @@ public class UserManagementAbility implements AbilityExtension {
                         );
 
                         if (mentions.isEmpty()) {
-                            abilityBot.silent().send("❌ Не найдено упоминаний пользователей", ctx.chatId());
+                            sendService.sendMessageToThread(ctx, "❌ Не найдено упоминаний пользователей");
                             return;
                         }
 
@@ -64,16 +62,17 @@ public class UserManagementAbility implements AbilityExtension {
                         }
 
                         String response = String.format(
-                                "✅ Обработано упоминаний: %d\n" +
-                                        "👥 Новых пользователей: %d\n" +
-                                        "💾 Уже в базе: %d",
+                                """
+                                        ✅ Обработано упоминаний: %d
+                                        👥 Новых пользователей: %d
+                                        💾 Уже в базе: %d""",
                                 mentions.size(), addedCount, existingCount
                         );
 
-                        abilityBot.silent().send(response, ctx.chatId());
+                        sendService.sendMessageToThread(ctx, response);
 
                     } catch (Exception e) {
-                        abilityBot.silent().send("❌ Ошибка при добавлении пользователей: " + e.getMessage(), ctx.chatId());
+                        sendService.sendMessageToThread(ctx, "❌ Ошибка при добавлении пользователей: " + e.getMessage());
                     }
                 })
                 .build();

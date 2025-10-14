@@ -4,6 +4,8 @@ import java.util.List;
 
 public class Constants {
 
+    public static final String PARSE_MARKDOWN = "Markdown";
+    public static final String PARSE_MARKDOWN_V2 = "MarkdownV2";
     public static final int MAX_MESSAGE_LENGTH = 4096;
     public static final int MAX_MENTIONS_PER_MESSAGE = 40;
     public static final int MAX_CAPTION_LENGTH = 1024;
