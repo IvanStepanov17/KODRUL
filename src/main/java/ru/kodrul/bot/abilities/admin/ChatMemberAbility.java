@@ -2,14 +2,12 @@ package ru.kodrul.bot.abilities.admin;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
-import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
 import org.telegram.abilitybots.api.objects.Locality;
 import org.telegram.abilitybots.api.objects.MessageContext;
 import org.telegram.abilitybots.api.util.AbilityExtension;
-import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMemberCount;
+import ru.kodrul.bot.common.CommonAbilityHelper;
 import ru.kodrul.bot.services.SendService;
 
 import java.util.Optional;
@@ -23,9 +21,8 @@ import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 @RequiredArgsConstructor
 public class ChatMemberAbility implements AbilityExtension {
 
-    @Lazy
-    private final AbilityBot abilityBot;
     private final SendService sendService;
+    private final CommonAbilityHelper commonAbilityHelper;
 
     public Ability getChatMembers() {
         return Ability.builder()
@@ -34,10 +31,7 @@ public class ChatMemberAbility implements AbilityExtension {
                 .locality(Locality.GROUP)
                 .privacy(PUBLIC)
                 .action(ctx -> {
-                    String chatId = ctx.chatId().toString();
-                    GetChatMemberCount countRequest = new GetChatMemberCount();
-                    countRequest.setChatId(chatId);
-                    Optional<Integer> memberCount = abilityBot.silent().execute(countRequest);
+                    Optional<Integer> memberCount = commonAbilityHelper.getMemberCount(ctx);
                     memberCount.ifPresentOrElse(
                             count -> sendService.sendMessageToThread(ctx, "Количество участников: " + count),
                             () -> sendService.sendMessageToThread(ctx, "Ошибка при получении количества участников"));

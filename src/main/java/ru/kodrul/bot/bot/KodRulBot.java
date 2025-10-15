@@ -5,7 +5,12 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.telegram.abilitybots.api.bot.AbilityBot;
+import org.telegram.abilitybots.api.toggle.CustomToggle;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import ru.kodrul.bot.abilities.admin.HelperAbility;
+import ru.kodrul.bot.abilities.hidden.HiddenGroupManagementAbility;
+import ru.kodrul.bot.abilities.hidden.HiddenHelperAbility;
+import ru.kodrul.bot.abilities.hidden.HiddenScheduleAbility;
 import ru.kodrul.bot.abilities.user.RandomizeAbility;
 import ru.kodrul.bot.abilities.user.RouletteAbility;
 import ru.kodrul.bot.abilities.admin.ChatMemberAbility;
@@ -24,6 +29,10 @@ public class KodRulBot extends AbilityBot {
     private final Set<ResponseHandler> handlers;
     private final BotProperties properties;
 
+    private static final CustomToggle toggle = new CustomToggle()
+            .turnOff("commands")
+            .turnOff("report");
+
     public KodRulBot(
             Environment environment,
             Set<ResponseHandler> handlers,
@@ -33,18 +42,27 @@ public class KodRulBot extends AbilityBot {
             @Lazy GroupManagementAbility groupManagementAbility,
             @Lazy ChatMemberAbility chatMemberAbility,
             @Lazy UserManagementAbility userManagementAbility,
-            @Lazy ScheduleAbility scheduleAbility
+            @Lazy ScheduleAbility scheduleAbility,
+            @Lazy HelperAbility helperAbility,
+            @Lazy HiddenGroupManagementAbility hiddenGroupManagementAbility,
+            @Lazy HiddenScheduleAbility hiddenScheduleAbility,
+            @Lazy HiddenHelperAbility hiddenHelperAbility
     ) {
-        super(environment.getProperty("bot.token"), environment.getProperty("bot.name"));
+        super(environment.getProperty("bot.token"), environment.getProperty("bot.name"), toggle);
         this.handlers = handlers;
         this.properties = properties;
+
         addExtensions(
                 rouletteAbility,
                 randomizeAbility,
                 groupManagementAbility,
                 chatMemberAbility,
                 userManagementAbility,
-                scheduleAbility
+                scheduleAbility,
+                helperAbility,
+                hiddenGroupManagementAbility,
+                hiddenScheduleAbility,
+                hiddenHelperAbility
         );
     }
 

@@ -30,6 +30,7 @@
 	<properties>
 		<java.version>17</java.version>
 		<telegram.version>6.9.7.1</telegram.version>
+		<abilitybot.version>6.9.7.1</abilitybot.version>
 	</properties>
 
 	<dependencies>
@@ -74,7 +75,7 @@
 		<dependency>
 			<groupId>org.telegram</groupId>
 			<artifactId>telegrambots-abilities</artifactId>
-			<version>${telegram.version}</version>
+			<version>${abilitybot.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.telegram</groupId>

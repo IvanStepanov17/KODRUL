@@ -12,6 +12,7 @@ import ru.kodrul.bot.services.GroupManagementService;
 import ru.kodrul.bot.services.ScheduledPostService;
 import ru.kodrul.bot.services.SendService;
 import ru.kodrul.bot.utils.Constants;
+import ru.kodrul.bot.utils.EscapeHelper;
 
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +48,7 @@ public class ScheduleAbility implements AbilityExtension {
                     try {
                         String groupName = parts[1];
                         String scheduleInput = parts[2];
-                        String restOfText = parts[3];
+                        String restOfText = EscapeHelper.escapeMarkdownV2(parts[3]);
 
                         String messageText;
                         String imageUrl = null;
@@ -351,18 +352,11 @@ public class ScheduleAbility implements AbilityExtension {
             
             *Cron-выражения (для продвинутых):*
             • `0 0 9 * * ?` - ежедневно в 9:00
-            • `0 0 9 ? * MON,WED,FRI` - по пн, ср, пт в 9:00
+            • `0 0 9 ? * MON,WED,FRI` - по понедельникам, средам, пятницам в 9:00
             • `0 0 9 1 * ?` - первое число месяца в 9:00
             • `0 0 12 ? * SUN` - каждое воскресенье в 12:00
             
             *Дни недели:* пн, вт, ср, чт, пт, сб, вс
-            
-            *Другие команды:*
-            • `/listschedules` - показать все активные расписания в чате
-            • `/listgroupschedules <группа>` - показать расписания для конкретной группы
-            • `/scheduleinfo <ID>` - информация о расписании
-            • `/toggleschedule <ID> <on|off>` - включить/выключить
-            • `/deleteschedule <ID>` - удалить расписание
             
             *Примеры:*
             `/createschedule Тест 09:00 Доброе утро!`

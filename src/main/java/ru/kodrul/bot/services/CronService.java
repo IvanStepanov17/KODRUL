@@ -50,14 +50,17 @@ public class CronService {
     private CronParseResult parseSimpleFormats(String userInput) {
         // Ежедневно в определенное время: "09:00" или "ежедневно 09:00"
         if (userInput.matches("(ежедневно\\s+)?([0-1]?[0-9]|2[0-3]):[0-5][0-9]")) {
-            String time = userInput.replace("ежедневно", "").trim();
-            String cron = "0 0 " + time.split(":")[0] + " " + time.split(":")[1] + " * * ?";
-            String description = "Ежедневно в " + time;
+            var time = userInput.replace("ежедневно", "").trim();
+            var timeParts = time.split(":");
+            var hour = timeParts[0];
+            var min = timeParts[1];
+            var cron = String.format("0 %s %s * * ?", min, hour);
+            var description = "Ежедневно в " + time;
             return new CronParseResult(cron, description, true);
         }
 
         // Еженедельно в определенные дни: "пн,ср,пт 09:00" или "еженедельно пн,ср,пт 09:00"
-        if (userInput.matches("(еженедельно\\s+)?[пвсчтпб1234567,\\s]+\\s+([0-1]?[0-9]|2[0-3]):[0-5][0-9]")) {
+        if (userInput.matches("(еженедельно\\s+)?([пнвтсрчтптсбвс1-7,\\s]+)\\s+([0-1]?[0-9]|2[0-3]):[0-5][0-9]")) {
             return parseWeeklyFormat(userInput);
         }
 
@@ -80,7 +83,7 @@ public class CronService {
         String daysPart = parts[0];
         String time = parts[1];
 
-        // Конвертируем дни недели в cron-формат (1=ВС, 2=ПН, ..., 7=СБ в Spring cron)
+        // Конвертируем дни недели в cron-формат (1=ВС, 2=ПН, ..., 7=СБ в cron)
         String cronDays = convertDaysToCron(daysPart);
         String[] timeParts = time.split(":");
 
@@ -98,7 +101,7 @@ public class CronService {
             throw new IllegalArgumentException("Неверный формат ежемесячного расписания");
         }
 
-        String daysPart = parts[0];
+        String daysPart = parts[0].replaceAll("\\s+", ",");
         String time = parts[1];
         String[] timeParts = time.split(":");
 
@@ -153,12 +156,17 @@ public class CronService {
 
     /**
      * Проверяет, должно ли выполняться расписание в указанное время
+     * TODO хз, наверное можно сравнить как то проще, без плясок с бубнами, но пока как то так.
      */
     public boolean shouldExecute(String cronExpression, LocalDateTime dateTime) {
         try {
-            CronExpression expression = CronExpression.parse(cronExpression);
-            return expression.next(dateTime) != null &&
-                    expression.next(dateTime).isEqual(dateTime);
+            CronExpression parsedExpression = CronExpression.parse(cronExpression);
+            // CronExpression в спринговой библиотеке не имеет метода isSatisfiedBy как в либе Quartz
+            // поэтому мы вычисляем следующее время выполнения, которое было бы до текущего момента. Для этого берём
+            // текущее время, отнимаем от него 1 наносекунду и находим следующее время выполнения cron с помощью next()
+            LocalDateTime checkPoint = dateTime.minusNanos(1);
+            LocalDateTime nextExecutionTime = parsedExpression.next(checkPoint);
+            return dateTime.equals(nextExecutionTime);
         } catch (Exception e) {
             log.error("Error checking cron expression: {}", cronExpression, e);
             return false;

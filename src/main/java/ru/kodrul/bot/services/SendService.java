@@ -58,4 +58,15 @@ public class SendService {
                     chatId, messageThreadId, e.getMessage());
         }
     }
+
+    /**
+     * Отправляет сообщение пользователю (в личные сообщения). В Telegram user_id == chat_id для личных сообщений
+     */
+    public void sendToUser(Long userId, String message) {
+        send(userId, null, message, null);
+    }
+
+    public void sendToUser(Long userId, String message, String parseMode) {
+        send(userId, null, message, parseMode);
+    }
 }

@@ -63,7 +63,7 @@ public class RandomizeAbility implements AbilityExtension {
         return Ability
                 .builder()
                 .name("distributeteams")
-                .info("Распределить участников группы на команды. Использование: /distributeteams <группа> <количество_команд>")
+                .info("Распределить участников группы на команды.")
                 .locality(ALL)
                 .privacy(PUBLIC)
                 .input(2)
