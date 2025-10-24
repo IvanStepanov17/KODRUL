@@ -13,7 +13,6 @@ import ru.kodrul.bot.services.GroupManagementService;
 import ru.kodrul.bot.services.ScheduledPostService;
 import ru.kodrul.bot.services.SendService;
 import ru.kodrul.bot.utils.Constants;
-import ru.kodrul.bot.utils.EscapeHelper;
 
 import java.util.Optional;
 
@@ -37,8 +36,11 @@ public class HiddenScheduleAbility implements AbilityExtension {
                 .info("Создать расписание для указанного чата (только для доверенных пользователей)")
                 .locality(USER)
                 .privacy(PUBLIC)
-                .input(4)
+                .input(0)
                 .action(ctx -> {
+                    String fullText = ctx.update().getMessage().getText();
+                    String[] parts = fullText.split("\\s+", 5);
+
                     Long userId = ctx.user().getId();
                     if (!authorizationService.isTrustedUser(userId)) {
                         sendService.sendToUser(userId, "❌ У вас нет прав для использования этой команды");
@@ -46,8 +48,7 @@ public class HiddenScheduleAbility implements AbilityExtension {
                         return;
                     }
 
-                    String[] args = ctx.arguments();
-                    if (args.length < 4) {
+                    if (parts.length < 5) {
                         sendService.sendToUser(userId,
                                 """
                                         📅 *Использование:* /createschedulehidden <chat_id> <группа> <расписание> <сообщение>
@@ -76,10 +77,10 @@ public class HiddenScheduleAbility implements AbilityExtension {
                     }
 
                     try {
-                        Long targetChatId = Long.parseLong(args[0]);
-                        String groupName = args[1];
-                        String scheduleInput = args[2];
-                        String restOfText = EscapeHelper.escapeMarkdownV2(args[3]);
+                        Long targetChatId = Long.parseLong(parts[1]);
+                        String groupName = parts[2];
+                        String scheduleInput = parts[3];
+                        String restOfText = parts[4];
 
                         if (!commonAbilityHelper.isBotMemberOfChat(targetChatId)) {
                             sendService.sendToUser(userId,
@@ -117,26 +118,28 @@ public class HiddenScheduleAbility implements AbilityExtension {
                         );
 
                         String successMessage = String.format(
-                                "✅ *Расписание создано!*\n\n" +
-                                        "📋 *Группа:* %s\n" +
-                                        "💬 *Чат:* %s (ID: %d)\n" +
-                                        "⏰ *Расписание:* %s\n" +
-                                        "✉️ *Сообщение:* %s\n" +
-                                        "%s" +
-                                        "👤 *Создано:* %s (ID: %d)\n" +
-                                        "🆔 *ID расписания:* %d",
+                                """
+                                        ✅ Расписание создано!
+
+                                        📋 Группа: %s
+                                        💬 Чат: %s (ID: %d)
+                                        ⏰ Расписание: %s
+                                        ✉️ Сообщение: %s
+                                        %s
+                                        👤 Создано: %s (ID: %d)
+                                        🆔 ID расписания: %d""",
                                 groupName,
                                 chatTitle,
                                 targetChatId,
                                 schedule.getDescription(),
                                 messageText,
-                                imageUrl != null ? "🖼️ *Изображение:* есть\n" : "",
+                                imageUrl != null ? "🖼️ Изображение: + imageUrl + \n" : "",
                                 ctx.user().getFirstName(),
                                 userId,
                                 schedule.getId()
                         );
 
-                        sendService.sendToUser(userId, successMessage, Constants.PARSE_MARKDOWN);
+                        sendService.sendToUser(userId, successMessage);
                         log.info("Schedule created by user {} for chat {}: {}",
                                 userId, targetChatId, schedule.getDescription());
 
@@ -169,8 +172,10 @@ public class HiddenScheduleAbility implements AbilityExtension {
                     String[] args = ctx.arguments();
                     if (args.length < 1) {
                         sendService.sendToUser(userId,
-                                "Использование: /listscheduleshidden <chat_id>\n\n" +
-                                        "Пример: /listscheduleshidden -100123456789");
+                                """
+                                        Использование: /listscheduleshidden <chat_id>
+
+                                        Пример: /listscheduleshidden -100123456789""");
                         return;
                     }
 

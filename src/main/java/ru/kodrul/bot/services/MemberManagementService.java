@@ -33,9 +33,10 @@ public class MemberManagementService {
     private final MentionParser mentionParser;
 
     @Transactional
-    public void handleMemberOperation(MessageContext ctx, boolean isAdd) {
+    public void handleMemberOperation(MessageContext ctx, boolean isAdd, boolean isTrustedCommand) {
         String[] args = ctx.arguments();
 
+        // TODO изменить использование при вызове от доверенного пользователя с передачей идентификатора чата
         if (args.length < 1) {
             String usage = isAdd ?
                     "Использование: /addmembers <имя_группы> @user1 @user2 ..." :
@@ -45,7 +46,12 @@ public class MemberManagementService {
         }
 
         String groupName = args[0];
-        Long chatId = ctx.chatId();
+        Long chatId;
+        if (isTrustedCommand) {
+            chatId = Long.valueOf(args[1]);
+        } else {
+            chatId = ctx.chatId();
+        }
 
         try {
             Optional<ChatGroup> groupOpt = groupService.getGroupByName(chatId, groupName);

@@ -9,6 +9,7 @@ import ru.kodrul.bot.common.CommonAbilityHelper;
 import ru.kodrul.bot.entity.ChatGroup;
 import ru.kodrul.bot.services.AuthorizationService;
 import ru.kodrul.bot.services.GroupManagementService;
+import ru.kodrul.bot.services.MemberManagementService;
 import ru.kodrul.bot.services.SendService;
 import ru.kodrul.bot.utils.Constants;
 
@@ -24,6 +25,7 @@ public class HiddenGroupManagementAbility implements AbilityExtension {
     private final AuthorizationService authorizationService;
     private final SendService sendService;
     private final CommonAbilityHelper commonAbilityHelper;
+    private final MemberManagementService memberManagementService;
 
     public Ability createGroupHiddenAbility() {
         return Ability.builder()
@@ -100,6 +102,26 @@ public class HiddenGroupManagementAbility implements AbilityExtension {
                         sendService.sendToUser(userId, "❌ Ошибка при создании группы: " + e.getMessage());
                     }
                 })
+                .build();
+    }
+
+    public Ability addMembersAbility() {
+        return Ability.builder()
+                .name("addmembershidden")
+                .info("Добавить участников в группу")
+                .locality(USER)
+                .privacy(PUBLIC)
+                .action(ctx -> memberManagementService.handleMemberOperation(ctx, true, true))
+                .build();
+    }
+
+    public Ability removeMembersAbility() {
+        return Ability.builder()
+                .name("removemembershidden")
+                .info("Удалить участников из группы")
+                .locality(USER)
+                .privacy(PUBLIC)
+                .action(ctx -> memberManagementService.handleMemberOperation(ctx, false, true))
                 .build();
     }
 

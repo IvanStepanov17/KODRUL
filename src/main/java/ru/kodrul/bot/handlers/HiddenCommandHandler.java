@@ -27,7 +27,9 @@ public class HiddenCommandHandler extends ResponseHandler {
             "toggleschedulehidden",
             "deleteschedulehidden",
             "scheduleinfohidden",
-            "helphidden"
+            "helphidden",
+            "addmembershidden",
+            "removemembershidden"
     );
 
     @Override

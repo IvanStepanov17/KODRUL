@@ -181,7 +181,7 @@ public class GroupManagementAbility implements AbilityExtension {
                 .info("Добавить участников в группу")
                 .locality(GROUP)
                 .privacy(ADMIN)
-                .action(ctx -> memberManagementService.handleMemberOperation(ctx, true))
+                .action(ctx -> memberManagementService.handleMemberOperation(ctx, true, false))
                 .build();
     }
 
@@ -191,7 +191,7 @@ public class GroupManagementAbility implements AbilityExtension {
                 .info("Удалить участников из группы")
                 .locality(GROUP)
                 .privacy(ADMIN)
-                .action(ctx -> memberManagementService.handleMemberOperation(ctx, false))
+                .action(ctx -> memberManagementService.handleMemberOperation(ctx, false, false))
                 .build();
     }
 
@@ -332,10 +332,10 @@ public class GroupManagementAbility implements AbilityExtension {
 
                         if (groupOpt.isPresent()) {
                             ChatGroup chatGroup = groupOpt.get();
-                            String text = groupService.getTagUsersMessage(chatGroup);
+                            String userNames = groupService.getTagUsersMessage(chatGroup);
 
-                            if (text != null && !text.trim().isEmpty()) {
-                                sendService.sendMessageToThread(ctx, text);
+                            if (userNames != null && !userNames.trim().isEmpty()) {
+                                sendService.sendMessageToThread(ctx, userNames);
                             } else {
                                 sendService.sendMessageToThread(ctx, "❌ Группа пуста");
                             }
