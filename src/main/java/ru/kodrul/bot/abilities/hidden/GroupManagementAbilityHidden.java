@@ -7,11 +7,15 @@ import org.telegram.abilitybots.api.objects.Ability;
 import org.telegram.abilitybots.api.util.AbilityExtension;
 import ru.kodrul.bot.common.CommonAbilityHelper;
 import ru.kodrul.bot.entity.ChatGroup;
+import ru.kodrul.bot.entity.GroupMember;
 import ru.kodrul.bot.services.AuthorizationService;
 import ru.kodrul.bot.services.GroupManagementService;
 import ru.kodrul.bot.services.MemberManagementService;
 import ru.kodrul.bot.services.SendService;
 import ru.kodrul.bot.utils.Constants;
+
+import java.util.List;
+import java.util.Optional;
 
 import static org.telegram.abilitybots.api.objects.Locality.USER;
 import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
@@ -19,7 +23,7 @@ import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class HiddenGroupManagementAbility implements AbilityExtension {
+public class GroupManagementAbilityHidden implements AbilityExtension {
 
     private final GroupManagementService groupManagementService;
     private final AuthorizationService authorizationService;
@@ -111,7 +115,17 @@ public class HiddenGroupManagementAbility implements AbilityExtension {
                 .info("Добавить участников в группу")
                 .locality(USER)
                 .privacy(PUBLIC)
-                .action(ctx -> memberManagementService.handleMemberOperation(ctx, true, true))
+                .action(ctx -> {
+
+                    Long userId = ctx.user().getId();
+                    if (!authorizationService.isTrustedUser(userId)) {
+                        sendService.sendToUser(userId, "❌ У вас нет прав для использования этой команды");
+                        log.warn("Unauthorized access attempt by user: {}", userId);
+                        return;
+                    }
+
+                    memberManagementService.handleMemberOperation(ctx, true, true);
+                })
                 .build();
     }
 
@@ -121,7 +135,124 @@ public class HiddenGroupManagementAbility implements AbilityExtension {
                 .info("Удалить участников из группы")
                 .locality(USER)
                 .privacy(PUBLIC)
-                .action(ctx -> memberManagementService.handleMemberOperation(ctx, false, true))
+                .action(ctx -> {
+
+                    Long userId = ctx.user().getId();
+                    if (!authorizationService.isTrustedUser(userId)) {
+                        sendService.sendToUser(userId, "❌ У вас нет прав для использования этой команды");
+                        log.warn("Unauthorized access attempt by user: {}", userId);
+                        return;
+                    }
+
+                    memberManagementService.handleMemberOperation(ctx, false, true);
+                })
+                .build();
+    }
+
+    public Ability listGroupsAbility() {
+        return Ability.builder()
+                .name("listgroupshidden")
+                .info("Показать все группы в чате")
+                .locality(USER)
+                .privacy(PUBLIC)
+                .input(1)
+                .action(ctx -> {
+
+                    Long userId = ctx.user().getId();
+                    if (!authorizationService.isTrustedUser(userId)) {
+                        sendService.sendToUser(userId, "❌ У вас нет прав для использования этой команды");
+                        log.warn("Unauthorized access attempt by user: {}", userId);
+                        return;
+                    }
+
+                    String[] args = ctx.arguments();
+
+                    if (args.length < 1) {
+                        sendService.sendToUser(userId,
+                                """
+                                        Использование: /listgroupshidden <chat_id>
+                                        Пример: /listgroupshidden -100123456789
+                                        """);
+                        return;
+                    }
+
+                    Long targetChatId = Long.parseLong(args[0]);
+                    List<ChatGroup> groups = groupManagementService.getChatGroups(targetChatId);
+                    if (groups.isEmpty()) {
+                        sendService.sendMessageToThread(ctx, "В этом чате еще нет групп");
+                        return;
+                    }
+
+                    StringBuilder response = new StringBuilder("📋 Группы в этом чате:\n\n");
+                    groups.forEach(group ->
+                            response.append(groupManagementService.formatGroupInfo(group)).append("\n\n")
+                    );
+
+                    sendService.sendMessageToThread(ctx, response.toString());
+                })
+                .build();
+    }
+
+    public Ability groupInfoAbility() {
+        return Ability.builder()
+                .name("groupinfohidden")
+                .info("Получить подробную информацию о группе и её участниках")
+                .locality(USER)
+                .privacy(PUBLIC)
+                .input(2)
+                .action(ctx -> {
+
+                    Long userId = ctx.user().getId();
+                    if (!authorizationService.isTrustedUser(userId)) {
+                        sendService.sendToUser(userId, "❌ У вас нет прав для использования этой команды");
+                        log.warn("Unauthorized access attempt by user: {}", userId);
+                        return;
+                    }
+
+                    String[] args = ctx.arguments();
+
+                    if (args.length < 2) {
+                        sendService.sendToUser(userId,
+                                """
+                                        Использование: /groupinfohidden <chat_id> <название группы>
+                                        Пример: /groupinfohidden -100123456789 Тест
+                                        """);
+                        return;
+                    }
+
+                    try {
+                        Long targetChatId = Long.parseLong(args[0]);
+                        String groupName = args[1];
+                        Optional<ChatGroup> groupOpt = groupManagementService.getGroupByNameWithMembersAndUsers(targetChatId, groupName);
+
+                        if (groupOpt.isPresent()) {
+                            ChatGroup group = groupOpt.get();
+
+                            StringBuilder response = new StringBuilder();
+                            response.append("📊 *Детальная информация о группе*\n\n");
+                            response.append(groupManagementService.formatGroupInfoWithMembers(group)).append("\n\n");
+
+                            if (group.getMembers() == null || group.getMembers().isEmpty()) {
+                                response.append("👥 *Участники:* группа пуста\n");
+                            } else {
+                                response.append("👥 *Участники (").append(group.getMembers().size()).append("):*\n");
+
+                                for (int i = 0; i < group.getMembers().size(); i++) {
+                                    GroupMember member = group.getMembers().get(i);
+                                    String userInfo = groupManagementService.formatUserInfoForGroup(member);
+                                    response.append(i + 1).append(". ").append(userInfo).append("\n");
+                                }
+                            }
+
+                            sendService.sendMessageToThread(ctx, response.toString(), Constants.PARSE_MARKDOWN);
+                        } else {
+                            sendService.sendMessageToThread(ctx, "❌ Группа '" + groupName + "' не найдена в этом чате");
+                        }
+                    } catch (Exception e) {
+                        log.error("Error getting group info", e);
+                        sendService.sendMessageToThread(ctx, "❌ Ошибка при получении информации о группе: " + e.getMessage());
+                    }
+                })
                 .build();
     }
 
@@ -134,8 +265,13 @@ public class HiddenGroupManagementAbility implements AbilityExtension {
                 .input(2)
                 .action(ctx -> {
                     Long userId = ctx.user().getId();
-                    String[] args = ctx.arguments();
+                    if (!authorizationService.isTrustedUser(userId)) {
+                        sendService.sendToUser(userId, "❌ У вас нет прав для использования этой команды");
+                        log.warn("Unauthorized access attempt by user: {}", userId);
+                        return;
+                    }
 
+                    String[] args = ctx.arguments();
                     if (args.length < 2) {
                         sendService.sendToUser(userId,
                                 "Использование: /addtrusteduser <user_id> <admin_key>\n\n" +

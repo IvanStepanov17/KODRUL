@@ -11,7 +11,6 @@ import ru.kodrul.bot.services.GroupManagementService;
 import ru.kodrul.bot.services.MemberManagementService;
 import ru.kodrul.bot.services.SendService;
 import ru.kodrul.bot.utils.Constants;
-import ru.kodrul.bot.utils.EscapeHelper;
 
 import java.util.List;
 import java.util.Optional;
@@ -149,7 +148,7 @@ public class GroupManagementAbility implements AbilityExtension {
 
                             StringBuilder response = new StringBuilder();
                             response.append("📊 *Детальная информация о группе*\n\n");
-                            response.append(formatGroupInfoWithMembers(group)).append("\n\n");
+                            response.append(groupService.formatGroupInfoWithMembers(group)).append("\n\n");
 
                             if (group.getMembers() == null || group.getMembers().isEmpty()) {
                                 response.append("👥 *Участники:* группа пуста\n");
@@ -158,7 +157,7 @@ public class GroupManagementAbility implements AbilityExtension {
 
                                 for (int i = 0; i < group.getMembers().size(); i++) {
                                     GroupMember member = group.getMembers().get(i);
-                                    String userInfo = formatUserInfoForGroup(member);
+                                    String userInfo = groupService.formatUserInfoForGroup(member);
                                     response.append(i + 1).append(". ").append(userInfo).append("\n");
                                 }
                             }
@@ -262,7 +261,7 @@ public class GroupManagementAbility implements AbilityExtension {
 
                             for (int i = 0; i < group.getMembers().size(); i++) {
                                 GroupMember member = group.getMembers().get(i);
-                                String userInfo = formatUserInfoForGroup(member);
+                                String userInfo = groupService.formatUserInfoForGroup(member);
                                 response.append(i + 1).append(". ").append(userInfo).append("\n");
                             }
                             sendService.sendMessageToThread(ctx, response.toString());
@@ -275,35 +274,6 @@ public class GroupManagementAbility implements AbilityExtension {
                     }
                 })
                 .build();
-    }
-
-    /**
-     * Форматирование информации об участнике группы для отображения
-     */
-    public static String formatUserInfoForGroup(GroupMember member) {
-        String userName = EscapeHelper.escapeMarkdownV2(member.getUser().getUserName());
-        String firstName = member.getUser().getFirstName();
-        String lastName = member.getUser().getLastName();
-
-        StringBuilder userInfo = new StringBuilder();
-
-        if (!userName.isEmpty()) {
-            userInfo.append("@").append(userName);
-        } else {
-            userInfo.append(firstName != null ? firstName : "");
-            if (lastName != null && !lastName.isEmpty()) {
-                if (!userInfo.isEmpty()) userInfo.append(" ");
-                userInfo.append(lastName);
-            }
-        }
-
-        userInfo.append(" (ID: ").append(member.getUser().getUserId()).append(")");
-
-        if (Boolean.TRUE.equals(member.getUser().getIsBot())) {
-            userInfo.append(" 🤖");
-        }
-
-        return userInfo.toString();
     }
 
     public Ability tagUserAbility() {
@@ -350,17 +320,5 @@ public class GroupManagementAbility implements AbilityExtension {
                     }
                 })
                 .build();
-    }
-
-    private String formatGroupInfoWithMembers(ChatGroup group) {
-        int memberCount = (group.getMembers() != null) ? group.getMembers().size() : 0;
-
-        return String.format(
-                "📋 Группа: *%s*%s\n👥 Участников: %d\n🆔 ID: %d",
-                EscapeHelper.escapeMarkdownV2(group.getName()),
-                group.getDescription() != null ? "\n📝 Описание: " + group.getDescription() : "",
-                memberCount,
-                group.getId()
-        );
     }
 }

@@ -13,6 +13,7 @@ import ru.kodrul.bot.exceptions.UserNotFoundException;
 import ru.kodrul.bot.repository.ChatGroupRepository;
 import ru.kodrul.bot.repository.GroupMemberRepository;
 import ru.kodrul.bot.repository.TelegramUserRepository;
+import ru.kodrul.bot.utils.EscapeHelper;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -191,5 +192,46 @@ public class GroupManagementService {
         } catch (Exception e) {
             throw new RuntimeException("Error sending scheduled message: " + e.getMessage(), e);
         }
+    }
+
+    public String formatGroupInfoWithMembers(ChatGroup group) {
+        int memberCount = (group.getMembers() != null) ? group.getMembers().size() : 0;
+
+        return String.format(
+                "📋 Группа: *%s*%s\n👥 Участников: %d\n🆔 ID: %d",
+                EscapeHelper.escapeMarkdownV2(group.getName()),
+                group.getDescription() != null ? "\n📝 Описание: " + group.getDescription() : "",
+                memberCount,
+                group.getId()
+        );
+    }
+
+    /**
+     * Форматирование информации об участнике группы для отображения
+     */
+    public String formatUserInfoForGroup(GroupMember member) {
+        String userName = EscapeHelper.escapeMarkdownV2(member.getUser().getUserName());
+        String firstName = member.getUser().getFirstName();
+        String lastName = member.getUser().getLastName();
+
+        StringBuilder userInfo = new StringBuilder();
+
+        if (!userName.isEmpty()) {
+            userInfo.append("@").append(userName);
+        } else {
+            userInfo.append(firstName != null ? firstName : "");
+            if (lastName != null && !lastName.isEmpty()) {
+                if (!userInfo.isEmpty()) userInfo.append(" ");
+                userInfo.append(lastName);
+            }
+        }
+
+        userInfo.append(" (ID: ").append(member.getUser().getUserId()).append(")");
+
+        if (Boolean.TRUE.equals(member.getUser().getIsBot())) {
+            userInfo.append(" 🤖");
+        }
+
+        return userInfo.toString();
     }
 }

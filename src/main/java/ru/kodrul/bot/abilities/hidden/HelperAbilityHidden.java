@@ -13,7 +13,7 @@ import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 
 @Component
 @RequiredArgsConstructor
-public class HiddenHelperAbility implements AbilityExtension {
+public class HelperAbilityHidden implements AbilityExtension {
 
     private final AuthorizationService authorizationService;
     private final SendService sendService;
@@ -36,8 +36,10 @@ public class HiddenHelperAbility implements AbilityExtension {
 
                         *Управление группами:*
                         • `/creategrouphidden <ID чата> <название> [описание]` - Создать группу для указанного чата
-                        • `/addmembershidden <группа> <тэгните участников через пробел>` - Добавить участников в группу
-                        • `/removemembershidden <группа> <тэгните участников через пробел>` - Удалить участников из группы
+                        • `/addmembershidden <группа> <ID чата> <тэгните участников через пробел>` - Добавить участников в группу
+                        • `/removemembershidden <группа> <ID чата> <тэгните участников через пробел>` - Удалить участников из группы
+                        • `/listgroupshidden <ID чата>` - Показать все группы в чате
+                        • `/groupinfohidden <ID чата> <группа>` - Получить подробную информацию о группе чата и её участниках
                         • `/addtrusteduser <ID пользователя> <ключ>` - Добавить доверенного пользователя (только с административным ключом)
                         • `/listtrustedusers` - Показать количество доверенных пользователей
 
@@ -47,6 +49,9 @@ public class HiddenHelperAbility implements AbilityExtension {
                         • `/toggleschedulehidden <ID расписания> on/off` - Включить/выключить расписание
                         • `/deleteschedulehidden <ID расписания>` - Удалить указанное расписание
                         • `/scheduleinfohidden <ID расписания>` - Получить подробную информацию о расписании
+                        
+                        "*Администрирование:*"
+                        • `/addusershidden <тэгните пользователей через пробел>` - Добавить пользователей в базу данных по их username
 
                         *Форматы расписания:*
                         • `09:00` - ежедневно в 9:00

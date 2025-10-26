@@ -29,7 +29,10 @@ public class HiddenCommandHandler extends ResponseHandler {
             "scheduleinfohidden",
             "helphidden",
             "addmembershidden",
-            "removemembershidden"
+            "removemembershidden",
+            "addusershidden",
+            "listgroupshidden",
+            "groupinfohidden"
     );
 
     @Override
@@ -43,11 +46,12 @@ public class HiddenCommandHandler extends ResponseHandler {
 
     @Override
     public void handle(Update update, SilentSender sender) {
-        Long userId = update.getMessage().getFrom().getId();
-        String command = update.getMessage().getText().split(" ")[0].substring(1);
+        var userId = update.getMessage().getFrom().getId();
+        var userName = update.getMessage().getFrom().getUserName();
+        var command = update.getMessage().getText().split(" ")[0].substring(1);
 
         if (!authorizationService.isTrustedUser(userId)) {
-            log.warn("Unauthorized attempt to use hidden command /{} by user {}", command, userId);
+            log.warn("Unauthorized attempt to use hidden command /{} by userId {} userName {}", command, userId, userName);
             throw new NotTrustedUserException(command, userId);
         }
     }

@@ -2,6 +2,7 @@ package ru.kodrul.bot.parser;
 
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.MessageEntity;
+import ru.kodrul.bot.pojo.ParsedMention;
 
 import java.util.ArrayList;
 import java.util.List;

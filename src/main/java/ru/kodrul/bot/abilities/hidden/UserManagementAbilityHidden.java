@@ -1,4 +1,4 @@
-package ru.kodrul.bot.abilities.admin;
+package ru.kodrul.bot.abilities.hidden;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -12,26 +12,23 @@ import ru.kodrul.bot.services.UserSyncService;
 
 import java.util.List;
 
-import static org.telegram.abilitybots.api.objects.Locality.GROUP;
-import static org.telegram.abilitybots.api.objects.Privacy.ADMIN;
+import static org.telegram.abilitybots.api.objects.Locality.USER;
+import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 
 @Component
 @RequiredArgsConstructor
-public class UserManagementAbility implements AbilityExtension {
+public class UserManagementAbilityHidden implements AbilityExtension {
 
     private final UserSyncService userSyncService;
     private final MentionParser mentionParser;
     private final SendService sendService;
 
-    /**
-     * Команда для ручного добавления пользователей по username
-     */
     public Ability addUsersAbility() {
         return Ability.builder()
-                .name("addusers")
+                .name("addusershidden")
                 .info("Добавить нескольких пользователей по username")
-                .locality(GROUP)
-                .privacy(ADMIN)
+                .locality(USER)
+                .privacy(PUBLIC)
                 .action(ctx -> {
                     try {
                         List<ParsedMention> mentions = mentionParser.parseMentions(

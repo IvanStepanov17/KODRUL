@@ -15,19 +15,26 @@ public class CronService {
      * Парсит пользовательский ввод в cron-выражение
      */
     public CronParseResult parseCronExpression(String userInput) {
-        userInput = userInput.trim().toLowerCase();
+        log.info("Parsing schedule: {}", userInput);
+        userInput = userInput.trim();
 
         try {
-            // Если это уже cron-выражение - проверяем его валидность
+            if ((userInput.startsWith("\"") && userInput.endsWith("\"")) ||
+                    (userInput.startsWith("'") && userInput.endsWith("'"))) {
+                userInput = userInput.substring(1, userInput.length() - 1);
+            }
+
+            userInput = userInput.toLowerCase();
+
             if (isValidCronExpression(userInput)) {
                 String description = generateDescription(userInput);
                 return new CronParseResult(userInput, description, true);
             }
 
-            // Пытаемся распознать простые форматы
             return parseSimpleFormats(userInput);
 
         } catch (Exception e) {
+            log.error("Error parsing schedule '{}': {}", userInput, e.getMessage());
             throw new IllegalArgumentException("Неверный формат расписания: " + userInput);
         }
     }
@@ -38,8 +45,11 @@ public class CronService {
     private boolean isValidCronExpression(String cronExpression) {
         try {
             CronExpression.parse(cronExpression);
-            return true;
+
+            String[] parts = cronExpression.split("\\s+");
+            return parts.length == 6;
         } catch (IllegalArgumentException e) {
+            log.debug("Invalid cron expression: {}", cronExpression);
             return false;
         }
     }
@@ -64,7 +74,7 @@ public class CronService {
             return parseWeeklyFormat(userInput);
         }
 
-        // Ежемесячно в определенные дни: "1,15 09:00" или "ежемесячно 1,15 09:00"
+        // Ежемесячно в определенные дни: "ежемесячно 1,15 09:00"
         if (userInput.matches("(ежемесячно\\s+)?[0-9,\\s]+\\s+([0-1]?[0-9]|2[0-3]):[0-5][0-9]")) {
             return parseMonthlyFormat(userInput);
         }
@@ -83,7 +93,6 @@ public class CronService {
         String daysPart = parts[0];
         String time = parts[1];
 
-        // Конвертируем дни недели в cron-формат (1=ВС, 2=ПН, ..., 7=СБ в cron)
         String cronDays = convertDaysToCron(daysPart);
         String[] timeParts = time.split(":");
 
@@ -117,8 +126,13 @@ public class CronService {
     private String convertDaysToCron(String daysPart) {
         // Заменяем русские названия на цифры (1=ПН, 7=ВС)
         String normalized = daysPart
-                .replace("пн", "2").replace("вт", "3").replace("ср", "4")
-                .replace("чт", "5").replace("пт", "6").replace("сб", "7").replace("вс", "1")
+                .replace("пн", "1")
+                .replace("вт", "2")
+                .replace("ср", "3")
+                .replace("чт", "4")
+                .replace("пт", "5")
+                .replace("сб", "6")
+                .replace("вс", "7")
                 .toUpperCase();
 
         // Разбиваем на отдельные дни
@@ -150,7 +164,6 @@ public class CronService {
      * Генерирует человекочитаемое описание для cron-выражения
      */
     private String generateDescription(String cronExpression) {
-        // Простая реализация - можно расширить при необходимости
         return "Расписание: " + cronExpression;
     }
 

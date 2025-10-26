@@ -12,8 +12,8 @@ import ru.kodrul.bot.entity.ChatGroup;
 import ru.kodrul.bot.entity.GroupMember;
 import ru.kodrul.bot.entity.TelegramUser;
 import ru.kodrul.bot.parser.MentionParser;
-import ru.kodrul.bot.parser.OperationResult;
-import ru.kodrul.bot.parser.ParsedMention;
+import ru.kodrul.bot.pojo.OperationResult;
+import ru.kodrul.bot.pojo.ParsedMention;
 import ru.kodrul.bot.utils.EscapeHelper;
 
 import java.util.List;

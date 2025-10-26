@@ -1,4 +1,4 @@
-package ru.kodrul.bot.parser;
+package ru.kodrul.bot.pojo;
 
 import lombok.Data;
 

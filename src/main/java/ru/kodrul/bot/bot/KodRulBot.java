@@ -8,9 +8,10 @@ import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.toggle.CustomToggle;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.kodrul.bot.abilities.admin.HelperAbility;
-import ru.kodrul.bot.abilities.hidden.HiddenGroupManagementAbility;
-import ru.kodrul.bot.abilities.hidden.HiddenHelperAbility;
-import ru.kodrul.bot.abilities.hidden.HiddenScheduleAbility;
+import ru.kodrul.bot.abilities.hidden.GroupManagementAbilityHidden;
+import ru.kodrul.bot.abilities.hidden.HelperAbilityHidden;
+import ru.kodrul.bot.abilities.hidden.ScheduleAbilityHidden;
+import ru.kodrul.bot.abilities.hidden.UserManagementAbilityHidden;
 import ru.kodrul.bot.abilities.user.RandomizeAbility;
 import ru.kodrul.bot.abilities.user.RouletteAbility;
 import ru.kodrul.bot.abilities.admin.ChatMemberAbility;
@@ -44,9 +45,10 @@ public class KodRulBot extends AbilityBot {
             @Lazy UserManagementAbility userManagementAbility,
             @Lazy ScheduleAbility scheduleAbility,
             @Lazy HelperAbility helperAbility,
-            @Lazy HiddenGroupManagementAbility hiddenGroupManagementAbility,
-            @Lazy HiddenScheduleAbility hiddenScheduleAbility,
-            @Lazy HiddenHelperAbility hiddenHelperAbility
+            @Lazy GroupManagementAbilityHidden groupManagementAbilityHidden,
+            @Lazy ScheduleAbilityHidden scheduleAbilityHidden,
+            @Lazy HelperAbilityHidden helperAbilityHidden,
+            @Lazy UserManagementAbilityHidden userManagementAbilityHidden
     ) {
         super(environment.getProperty("bot.token"), environment.getProperty("bot.name"), toggle);
         this.handlers = handlers;
@@ -60,9 +62,10 @@ public class KodRulBot extends AbilityBot {
                 userManagementAbility,
                 scheduleAbility,
                 helperAbility,
-                hiddenGroupManagementAbility,
-                hiddenScheduleAbility,
-                hiddenHelperAbility
+                groupManagementAbilityHidden,
+                scheduleAbilityHidden,
+                helperAbilityHidden,
+                userManagementAbilityHidden
         );
     }
 

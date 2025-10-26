@@ -9,7 +9,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import ru.kodrul.bot.entity.TelegramUser;
 import ru.kodrul.bot.parser.MentionParser;
-import ru.kodrul.bot.parser.ParsedMention;
+import ru.kodrul.bot.pojo.ParsedMention;
 import ru.kodrul.bot.services.UserSyncService;
 
 import java.util.List;

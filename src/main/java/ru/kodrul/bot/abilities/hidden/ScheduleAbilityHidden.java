@@ -8,6 +8,8 @@ import org.telegram.abilitybots.api.util.AbilityExtension;
 import ru.kodrul.bot.common.CommonAbilityHelper;
 import ru.kodrul.bot.entity.ChatGroup;
 import ru.kodrul.bot.entity.ScheduledPost;
+import ru.kodrul.bot.parser.CommandParser;
+import ru.kodrul.bot.pojo.CommandArguments;
 import ru.kodrul.bot.services.AuthorizationService;
 import ru.kodrul.bot.services.GroupManagementService;
 import ru.kodrul.bot.services.ScheduledPostService;
@@ -22,13 +24,14 @@ import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class HiddenScheduleAbility implements AbilityExtension {
+public class ScheduleAbilityHidden implements AbilityExtension {
 
     private final ScheduledPostService scheduledPostService;
     private final GroupManagementService groupManagementService;
     private final AuthorizationService authorizationService;
     private final SendService sendService;
     private final CommonAbilityHelper commonAbilityHelper;
+    private final CommandParser commandParser;
 
     public Ability createScheduleHiddenAbility() {
         return Ability.builder()
@@ -39,48 +42,29 @@ public class HiddenScheduleAbility implements AbilityExtension {
                 .input(0)
                 .action(ctx -> {
                     String fullText = ctx.update().getMessage().getText();
-                    String[] parts = fullText.split("\\s+", 5);
-
                     Long userId = ctx.user().getId();
+
                     if (!authorizationService.isTrustedUser(userId)) {
                         sendService.sendToUser(userId, "❌ У вас нет прав для использования этой команды");
                         log.warn("Unauthorized schedule access attempt by user: {}", userId);
                         return;
                     }
 
-                    if (parts.length < 5) {
-                        sendService.sendToUser(userId,
-                                """
-                                        📅 *Использование:* /createschedulehidden <chat_id> <группа> <расписание> <сообщение>
-
-                                        *Простые форматы:*
-                                        • `09:00` - ежедневно в 9:00
-                                        • `пн,ср,пт 09:00` - по понедельникам, средам и пятницам в 9:00
-                                        • `1,15 09:00` - 1 и 15 числа каждого месяца в 9:00
-                                        • `еженедельно вc 12:00` - каждое воскресенье в 12:00
-                                        
-                                        *Cron-выражения (для продвинутых):*
-                                        • `0 0 9 * * ?` - ежедневно в 9:00
-                                        • `0 0 9 ? * MON,WED,FRI` - по понедельникам, средам, пятницам в 9:00
-                                        • `0 0 9 1 * ?` - первое число месяца в 9:00
-                                        • `0 0 12 ? * SUN` - каждое воскресенье в 12:00
-                                        
-                                        *Дни недели:* пн, вт, ср, чт, пт, сб, вс
-
-                                        *Примеры:*
-                                        /createschedulehidden -100123456789 Тест 09:00 "Доброе утро!"
-                                        /createschedulehidden -100123456789 Созвон "пн,ср,пт 10:30" "Время созвона!"
-
-                                        *Для URL изображения добавьте его в конце через пробел*""",
-                                Constants.PARSE_MARKDOWN);
-                        return;
-                    }
-
                     try {
-                        Long targetChatId = Long.parseLong(parts[1]);
-                        String groupName = parts[2];
-                        String scheduleInput = parts[3];
-                        String restOfText = parts[4];
+                        // Парсим аргументы с поддержкой кавычек
+                        CommandArguments args = commandParser.parseCommandWithQuotes(fullText);
+
+                        if (args.getChatId() == null || args.getGroupName() == null ||
+                                args.getSchedule() == null || args.getMessage() == null) {
+                            sendScheduleHiddenHelp(userId);
+                            return;
+                        }
+
+                        Long targetChatId = args.getChatId();
+                        String groupName = args.getGroupName();
+                        String scheduleInput = args.getSchedule();
+                        String messageText = args.getMessage();
+                        String imageUrl = args.getImageUrl();
 
                         if (!commonAbilityHelper.isBotMemberOfChat(targetChatId)) {
                             sendService.sendToUser(userId,
@@ -96,19 +80,6 @@ public class HiddenScheduleAbility implements AbilityExtension {
                                             "Сначала создайте группу командой:\n" +
                                             "/creategrouphidden " + targetChatId + " " + groupName + " \"Описание группы\"");
                             return;
-                        }
-
-                        String messageText;
-                        String imageUrl = null;
-
-                        String[] textParts = restOfText.split("\\s+");
-                        if (textParts.length > 1 &&
-                                (textParts[textParts.length - 1].startsWith("http://") ||
-                                        textParts[textParts.length - 1].startsWith("https://"))) {
-                            imageUrl = textParts[textParts.length - 1];
-                            messageText = restOfText.substring(0, restOfText.lastIndexOf(imageUrl)).trim();
-                        } else {
-                            messageText = restOfText;
                         }
 
                         String chatTitle = commonAbilityHelper.getChatTitle(targetChatId);
@@ -133,7 +104,7 @@ public class HiddenScheduleAbility implements AbilityExtension {
                                 targetChatId,
                                 schedule.getDescription(),
                                 messageText,
-                                imageUrl != null ? "🖼️ Изображение: + imageUrl + \n" : "",
+                                imageUrl != null ? "🖼️ Изображение: " + imageUrl + "\n" : "",
                                 ctx.user().getFirstName(),
                                 userId,
                                 schedule.getId()
@@ -145,8 +116,6 @@ public class HiddenScheduleAbility implements AbilityExtension {
 
                     } catch (NumberFormatException e) {
                         sendService.sendToUser(userId, "❌ Chat ID должен быть числом");
-                    } catch (IllegalArgumentException e) {
-                        sendService.sendToUser(userId, "❌ " + e.getMessage() + "\n\nИспользуйте /schedulehelp для справки по форматам расписания");
                     } catch (Exception e) {
                         log.error("Error creating schedule for user {}: {}", userId, e.getMessage(), e);
                         sendService.sendToUser(userId, "❌ Ошибка при создании расписания: " + e.getMessage());
@@ -416,5 +385,37 @@ public class HiddenScheduleAbility implements AbilityExtension {
                     }
                 })
                 .build();
+    }
+
+    private void sendScheduleHiddenHelp(Long userId) {
+        String helpText = """
+            📅 *Использование:* /createschedulehidden <chat_id> <группа> "<расписание>" <сообщение>
+            
+            *ОБРАТИТЕ ВНИМАНИЕ:* Расписание и текст сообщения должны быть в кавычках!
+            
+            *Простые форматы:*
+            • `"09:00"` - ежедневно в 9:00
+            • `"еженедельно пн,ср,пт 09:00"` - по понедельникам, средам и пятницам в 9:00
+            • `"ежемесячно 1,15 09:00"` - 1 и 15 числа каждого месяца в 9:00
+            
+            *Cron-выражения (для продвинутых):*
+            • `"0 0 9 * * ?"` - ежедневно в 9:00
+            • `"0 0 9 ? * MON,WED,FRI"` - по пн, ср, пт в 9:00
+            • `"0 0 9 1 * ?"` - первое число месяца в 9:00
+            • `"0 0 12 ? * SUN"` - каждое воскресенье в 12:00
+            
+            *Дни недели:* пн, вт, ср, чт, пт, сб, вс
+            
+            *Примеры:*
+            /createschedulehidden -100123456789 Тест "09:00" "Доброе утро!"
+            /createschedulehidden -100123456789 Созвон "еженедельно пн,ср,пт 10:30" "Время созвона!"
+            /createschedulehidden -100123456789 Отчет "ежемесячно 1 09:00" "Ежемесячный отчет"
+            /createschedulehidden -100123456789 Обед "0 0 12 * * ?" "Время обеда!"
+            
+            *Для URL изображения добавьте его в конце:*
+            /createschedulehidden -100123456789 Тест "09:00" "Доброе утро!" https://example.com/image.jpg
+            """;
+
+        sendService.sendToUser(userId, helpText, Constants.PARSE_MARKDOWN);
     }
 }
