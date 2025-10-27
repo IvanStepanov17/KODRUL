@@ -14,6 +14,7 @@ import ru.kodrul.bot.services.MemberManagementService;
 import ru.kodrul.bot.services.SendService;
 import ru.kodrul.bot.utils.Constants;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,10 +35,8 @@ public class GroupManagementAbilityHidden implements AbilityExtension {
     public Ability createGroupHiddenAbility() {
         return Ability.builder()
                 .name("creategrouphidden")
-//                .info("Создать группу для указанного чата (только для доверенных пользователей)")
                 .locality(USER)
                 .privacy(PUBLIC)
-                .input(3)
                 .action(ctx -> {
 
                     Long userId = ctx.user().getId();
@@ -53,14 +52,16 @@ public class GroupManagementAbilityHidden implements AbilityExtension {
                                 """
                                         Использование: /creategrouphidden <chat_id> <название_группы> [описание]
 
-                                        Пример: /creategrouphidden -100123456789 НазваниеГруппы "Скрытно созданная группа\"""");
+                                        Пример: /creategrouphidden -100123456789 НазваниеГруппы Скрытно созданная группа
+                                        """
+                        );
                         return;
                     }
 
                     try {
                         Long targetChatId = Long.parseLong(args[0]);
                         String groupName = args[1];
-                        String description = args.length > 2 ? args[2] : null;
+                        String description = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
 
                         if (!commonAbilityHelper.isBotMemberOfChat(targetChatId)) {
                             sendService.sendToUser(userId,
@@ -83,11 +84,12 @@ public class GroupManagementAbilityHidden implements AbilityExtension {
                                         💬 *Чат:* %s (ID: %d)
                                         %s\
                                         👤 *Создана:* %s (ID: %d)
-                                        🆔 *ID группы:* %d""",
+                                        🆔 *ID группы:* %d
+                                """,
                                 groupName,
                                 chatTitle,
                                 targetChatId,
-                                description != null ? "📝 *Описание:* " + description + "\n" : "",
+                                "📝 *Описание:* " + description + "\n",
                                 ctx.user().getFirstName(),
                                 userId,
                                 group.getId()
@@ -112,7 +114,6 @@ public class GroupManagementAbilityHidden implements AbilityExtension {
     public Ability addMembersAbility() {
         return Ability.builder()
                 .name("addmembershidden")
-                .info("Добавить участников в группу")
                 .locality(USER)
                 .privacy(PUBLIC)
                 .action(ctx -> {
@@ -132,7 +133,6 @@ public class GroupManagementAbilityHidden implements AbilityExtension {
     public Ability removeMembersAbility() {
         return Ability.builder()
                 .name("removemembershidden")
-                .info("Удалить участников из группы")
                 .locality(USER)
                 .privacy(PUBLIC)
                 .action(ctx -> {
@@ -152,7 +152,6 @@ public class GroupManagementAbilityHidden implements AbilityExtension {
     public Ability listGroupsAbility() {
         return Ability.builder()
                 .name("listgroupshidden")
-                .info("Показать все группы в чате")
                 .locality(USER)
                 .privacy(PUBLIC)
                 .input(1)
@@ -171,8 +170,10 @@ public class GroupManagementAbilityHidden implements AbilityExtension {
                         sendService.sendToUser(userId,
                                 """
                                         Использование: /listgroupshidden <chat_id>
+                                        
                                         Пример: /listgroupshidden -100123456789
-                                        """);
+                                        """
+                        );
                         return;
                     }
 
@@ -196,7 +197,6 @@ public class GroupManagementAbilityHidden implements AbilityExtension {
     public Ability groupInfoAbility() {
         return Ability.builder()
                 .name("groupinfohidden")
-                .info("Получить подробную информацию о группе и её участниках")
                 .locality(USER)
                 .privacy(PUBLIC)
                 .input(2)
@@ -215,8 +215,10 @@ public class GroupManagementAbilityHidden implements AbilityExtension {
                         sendService.sendToUser(userId,
                                 """
                                         Использование: /groupinfohidden <chat_id> <название группы>
+                                        
                                         Пример: /groupinfohidden -100123456789 Тест
-                                        """);
+                                        """
+                        );
                         return;
                     }
 
@@ -259,7 +261,6 @@ public class GroupManagementAbilityHidden implements AbilityExtension {
     public Ability addTrustedUserAbility() {
         return Ability.builder()
                 .name("addtrusteduser")
-//                .info("Добавить доверенного пользователя (только с административным ключом)")
                 .locality(USER)
                 .privacy(PUBLIC)
                 .input(2)
@@ -274,8 +275,12 @@ public class GroupManagementAbilityHidden implements AbilityExtension {
                     String[] args = ctx.arguments();
                     if (args.length < 2) {
                         sendService.sendToUser(userId,
-                                "Использование: /addtrusteduser <user_id> <admin_key>\n\n" +
-                                        "Пример: /addtrusteduser 123456789 секретный-ключ");
+                                """
+                                        Использование: /addtrusteduser <user_id> <admin_key>
+
+                                        Пример: /addtrusteduser 123456789 секретный-ключ
+                                        """
+                        );
                         return;
                     }
 
@@ -286,9 +291,12 @@ public class GroupManagementAbilityHidden implements AbilityExtension {
                         authorizationService.addTrustedUser(newUserId, adminKey);
 
                         String message = String.format(
-                                "✅ *Пользователь добавлен в доверенные!*\n\n" +
-                                        "👤 *User ID:* %d\n" +
-                                        "📊 *Всего доверенных:* %d",
+                                """
+                                        ✅ *Пользователь добавлен в доверенные!*
+
+                                        👤 *User ID:* %d
+                                        📊 *Всего доверенных:* %d
+                                """,
                                 newUserId,
                                 authorizationService.getTrustedUsersCount()
                         );
@@ -311,7 +319,6 @@ public class GroupManagementAbilityHidden implements AbilityExtension {
     public Ability listTrustedUsersAbility() {
         return Ability.builder()
                 .name("listtrustedusers")
-//                .info("Показать количество доверенных пользователей")
                 .locality(USER)
                 .privacy(PUBLIC)
                 .action(ctx -> {

@@ -27,7 +27,6 @@ public class ChatMemberAbility implements AbilityExtension {
     public Ability getChatMembers() {
         return Ability.builder()
                 .name("members")
-                .info("Получить информацию об участниках чата")
                 .locality(Locality.GROUP)
                 .privacy(PUBLIC)
                 .action(ctx -> {
@@ -43,7 +42,6 @@ public class ChatMemberAbility implements AbilityExtension {
     public Ability chatMembersAbility() {
         return Ability.builder()
                 .name("chatmembers")
-                .info("Получить список участников чата")
                 .locality(GROUP)
                 .privacy(ADMIN)
                 .action(this::getChatMembers)

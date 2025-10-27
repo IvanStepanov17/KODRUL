@@ -29,7 +29,6 @@ public class UserManagementAbility implements AbilityExtension {
     public Ability addUsersAbility() {
         return Ability.builder()
                 .name("addusers")
-                .info("Добавить нескольких пользователей по username")
                 .locality(GROUP)
                 .privacy(ADMIN)
                 .action(ctx -> {

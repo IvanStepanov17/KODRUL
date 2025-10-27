@@ -24,7 +24,6 @@ public class RandomizeAbility implements AbilityExtension {
         return Ability
                 .builder()
                 .name("randomize")
-                .info("Рандомайзер. Использование: /randomize <Наименование групп через пробел>")
                 .locality(ALL)
                 .privacy(PUBLIC)
                 .action(ctx -> randomizeService.replayRandomize(ctx, abilityBot.silent()))
@@ -35,7 +34,6 @@ public class RandomizeAbility implements AbilityExtension {
         return Ability
                 .builder()
                 .name("randomizemulti")
-                .info("Выбрать несколько случайных участников из группы. Использование: /randomizemulti <группа> <количество>")
                 .locality(ALL)
                 .privacy(PUBLIC)
                 .input(2)
@@ -63,7 +61,6 @@ public class RandomizeAbility implements AbilityExtension {
         return Ability
                 .builder()
                 .name("distributeteams")
-                .info("Распределить участников группы на команды.")
                 .locality(ALL)
                 .privacy(PUBLIC)
                 .input(2)

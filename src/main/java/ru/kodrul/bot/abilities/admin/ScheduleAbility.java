@@ -33,7 +33,6 @@ public class ScheduleAbility implements AbilityExtension {
     public Ability createScheduleAbility() {
         return Ability.builder()
                 .name("createschedule")
-                .info("Создать расписание - укажите группу, расписание, а затем сообщение")
                 .locality(GROUP)
                 .privacy(ADMIN)
                 .action(ctx -> {
@@ -98,7 +97,6 @@ public class ScheduleAbility implements AbilityExtension {
     public Ability scheduleHelpAbility() {
         return Ability.builder()
                 .name("schedulehelp")
-                .info("Показать справку по созданию расписаний")
                 .locality(GROUP)
                 .privacy(PUBLIC)
                 .action(this::sendScheduleHelp)
@@ -108,7 +106,6 @@ public class ScheduleAbility implements AbilityExtension {
     public Ability listSchedulesAbility() {
         return Ability.builder()
                 .name("listschedules")
-                .info("Показать активные расписания для этого чата")
                 .locality(GROUP)
                 .privacy(ADMIN)
                 .action(ctx -> {
@@ -150,7 +147,6 @@ public class ScheduleAbility implements AbilityExtension {
     public Ability listGroupSchedulesAbility() {
         return Ability.builder()
                 .name("listgroupschedules")
-                .info("Показать расписания для конкретной группы")
                 .locality(GROUP)
                 .privacy(PUBLIC)
                 .input(1)
@@ -221,7 +217,6 @@ public class ScheduleAbility implements AbilityExtension {
     public Ability toggleScheduleAbility() {
         return Ability.builder()
                 .name("toggleschedule")
-                .info("Включить/выключить расписание")
                 .locality(GROUP)
                 .privacy(ADMIN)
                 .input(2)
@@ -257,7 +252,6 @@ public class ScheduleAbility implements AbilityExtension {
     public Ability deleteScheduleAbility() {
         return Ability.builder()
                 .name("deleteschedule")
-                .info("Удалить расписание")
                 .locality(GROUP)
                 .privacy(ADMIN)
                 .input(1)
@@ -289,7 +283,6 @@ public class ScheduleAbility implements AbilityExtension {
     public Ability scheduleInfoAbility() {
         return Ability.builder()
                 .name("scheduleinfo")
-                .info("Получить подробную информацию о расписании")
                 .locality(GROUP)
                 .privacy(ADMIN)
                 .input(1)

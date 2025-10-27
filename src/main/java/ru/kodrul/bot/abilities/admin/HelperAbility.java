@@ -22,7 +22,6 @@ public class HelperAbility implements AbilityExtension {
     public Ability reportCommands() {
         return Ability.builder()
                 .name("commands")
-                .info("Показать список доступных команд")
                 .locality(Locality.ALL)
                 .privacy(Privacy.PUBLIC)
                 .action(ctx -> {

@@ -36,7 +36,6 @@ public class ScheduleAbilityHidden implements AbilityExtension {
     public Ability createScheduleHiddenAbility() {
         return Ability.builder()
                 .name("createschedulehidden")
-                .info("Создать расписание для указанного чата (только для доверенных пользователей)")
                 .locality(USER)
                 .privacy(PUBLIC)
                 .input(0)
@@ -127,7 +126,6 @@ public class ScheduleAbilityHidden implements AbilityExtension {
     public Ability listSchedulesHiddenAbility() {
         return Ability.builder()
                 .name("listscheduleshidden")
-                .info("Показать расписания для указанного чата")
                 .locality(USER)
                 .privacy(PUBLIC)
                 .input(1)
@@ -205,7 +203,6 @@ public class ScheduleAbilityHidden implements AbilityExtension {
     public Ability toggleScheduleHiddenAbility() {
         return Ability.builder()
                 .name("toggleschedulehidden")
-                .info("Включить/выключить указанное расписание")
                 .locality(USER)
                 .privacy(PUBLIC)
                 .input(2)
@@ -269,7 +266,6 @@ public class ScheduleAbilityHidden implements AbilityExtension {
     public Ability deleteScheduleHiddenAbility() {
         return Ability.builder()
                 .name("deleteschedulehidden")
-                .info("Удалить указанное расписание")
                 .locality(USER)
                 .privacy(PUBLIC)
                 .input(1)
@@ -330,7 +326,6 @@ public class ScheduleAbilityHidden implements AbilityExtension {
     public Ability scheduleInfoHiddenAbility() {
         return Ability.builder()
                 .name("scheduleinfohidden")
-                .info("Получить подробную информацию о расписании")
                 .locality(USER)
                 .privacy(PUBLIC)
                 .input(1)

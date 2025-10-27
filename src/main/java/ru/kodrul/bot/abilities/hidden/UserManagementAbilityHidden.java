@@ -26,7 +26,6 @@ public class UserManagementAbilityHidden implements AbilityExtension {
     public Ability addUsersAbility() {
         return Ability.builder()
                 .name("addusershidden")
-                .info("Добавить нескольких пользователей по username")
                 .locality(USER)
                 .privacy(PUBLIC)
                 .action(ctx -> {

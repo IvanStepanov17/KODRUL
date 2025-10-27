@@ -12,6 +12,7 @@ import ru.kodrul.bot.services.MemberManagementService;
 import ru.kodrul.bot.services.SendService;
 import ru.kodrul.bot.utils.Constants;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,7 +32,6 @@ public class GroupManagementAbility implements AbilityExtension {
     public Ability createGroupAbility() {
         return Ability.builder()
                 .name("creategroup")
-                .info("Создать новую группу участников")
                 .locality(GROUP)
                 .privacy(ADMIN)
                 .input(1)
@@ -44,7 +44,7 @@ public class GroupManagementAbility implements AbilityExtension {
 
                     try {
                         String name = args[0];
-                        String description = args.length > 1 ? args[1] : null;
+                        String description = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
                         String chatTitle = ctx.update().getMessage().getChat().getTitle();
 
                         ChatGroup group = groupService.createGroup(name, description, ctx.chatId(), chatTitle, ctx.user().getId());
@@ -63,7 +63,6 @@ public class GroupManagementAbility implements AbilityExtension {
     public Ability listGroupsAbility() {
         return Ability.builder()
                 .name("listgroups")
-                .info("Показать все группы в чате")
                 .locality(GROUP)
                 .privacy(PUBLIC)
                 .action(ctx -> {
@@ -86,7 +85,6 @@ public class GroupManagementAbility implements AbilityExtension {
     public Ability deleteGroupAbility() {
         return Ability.builder()
                 .name("deletegroup")
-                .info("Удалить группу участников")
                 .locality(GROUP)
                 .privacy(ADMIN)
                 .input(1)
@@ -128,7 +126,6 @@ public class GroupManagementAbility implements AbilityExtension {
     public Ability groupInfoAbility() {
         return Ability.builder()
                 .name("groupinfo")
-                .info("Получить подробную информацию о группе и её участниках")
                 .locality(GROUP)
                 .privacy(PUBLIC)
                 .input(1)
@@ -177,7 +174,6 @@ public class GroupManagementAbility implements AbilityExtension {
     public Ability addMembersAbility() {
         return Ability.builder()
                 .name("addmembers")
-                .info("Добавить участников в группу")
                 .locality(GROUP)
                 .privacy(ADMIN)
                 .action(ctx -> memberManagementService.handleMemberOperation(ctx, true, false))
@@ -187,7 +183,6 @@ public class GroupManagementAbility implements AbilityExtension {
     public Ability removeMembersAbility() {
         return Ability.builder()
                 .name("removemembers")
-                .info("Удалить участников из группы")
                 .locality(GROUP)
                 .privacy(ADMIN)
                 .action(ctx -> memberManagementService.handleMemberOperation(ctx, false, false))
@@ -197,7 +192,6 @@ public class GroupManagementAbility implements AbilityExtension {
     public Ability groupsSummaryAbility() {
         return Ability.builder()
                 .name("groupssummary")
-                .info("Краткая сводка по всем группам в чате")
                 .locality(GROUP)
                 .privacy(PUBLIC)
                 .action(ctx -> {
@@ -233,7 +227,6 @@ public class GroupManagementAbility implements AbilityExtension {
     public Ability groupMembersAbility() {
         return Ability.builder()
                 .name("groupmembers")
-                .info("Получить список участников группы")
                 .locality(GROUP)
                 .privacy(PUBLIC)
                 .input(1)
@@ -279,7 +272,6 @@ public class GroupManagementAbility implements AbilityExtension {
     public Ability tagUserAbility() {
         return Ability.builder()
                 .name("tag")
-                .info("Тэгнуть участников группы")
                 .locality(GROUP)
                 .privacy(PUBLIC)
                 .input(1)

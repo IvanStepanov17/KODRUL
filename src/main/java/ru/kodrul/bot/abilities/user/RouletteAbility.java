@@ -23,7 +23,6 @@ public class RouletteAbility implements AbilityExtension {
         return Ability
                 .builder()
                 .name("roulette")
-                .info("Русская рулетка. Использование: /roulette <тэгните участников через пробел> <количество патронов>")
                 .locality(ALL)
                 .privacy(PUBLIC)
                 .action(messageContext -> rouletteService.replyRussianRoulette(messageContext, abilityBot.silent()))

@@ -21,7 +21,6 @@ public class HelperAbilityHidden implements AbilityExtension {
     public Ability hiddenHelpAbility() {
         return Ability.builder()
                 .name("helphidden")
-                .info("Показать список доступных команд")
                 .locality(USER)
                 .privacy(PUBLIC)
                 .action(ctx -> {
