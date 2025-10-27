@@ -43,7 +43,7 @@ public class HelperAbilityHidden implements AbilityExtension {
                         • `/listtrustedusers` - Показать количество доверенных пользователей
 
                         *Управление расписаниями:*
-                        • `/createschedulehidden <ID чата> <группа> <расписание> <сообщение>` - Создать расписание для указанного чата
+                        • `/createschedulehidden <ID чата> <группа> "<расписание>" "<сообщение>"` - Создать расписание для указанного чата
                         • `/listscheduleshidden <ID чата>` - Показать расписания для указанного чата
                         • `/toggleschedulehidden <ID расписания> on/off` - Включить/выключить расписание
                         • `/deleteschedulehidden <ID расписания>` - Удалить указанное расписание

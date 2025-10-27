@@ -51,7 +51,7 @@ public class ScheduleAbilityHidden implements AbilityExtension {
 
                     try {
                         // Парсим аргументы с поддержкой кавычек
-                        CommandArguments args = commandParser.parseCommandWithQuotes(fullText);
+                        CommandArguments args = commandParser.parseCommandWithChatIdAndQuotes(fullText);
 
                         if (args.getChatId() == null || args.getGroupName() == null ||
                                 args.getSchedule() == null || args.getMessage() == null) {
@@ -97,7 +97,8 @@ public class ScheduleAbilityHidden implements AbilityExtension {
                                         ✉️ Сообщение: %s
                                         %s
                                         👤 Создано: %s (ID: %d)
-                                        🆔 ID расписания: %d""",
+                                        🆔 ID расписания: %d
+                                """,
                                 groupName,
                                 chatTitle,
                                 targetChatId,

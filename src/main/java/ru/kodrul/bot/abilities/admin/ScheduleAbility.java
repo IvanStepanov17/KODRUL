@@ -6,13 +6,15 @@ import org.springframework.stereotype.Component;
 import org.telegram.abilitybots.api.objects.Ability;
 import org.telegram.abilitybots.api.objects.MessageContext;
 import org.telegram.abilitybots.api.util.AbilityExtension;
+import ru.kodrul.bot.common.CommonAbilityHelper;
 import ru.kodrul.bot.entity.ChatGroup;
 import ru.kodrul.bot.entity.ScheduledPost;
+import ru.kodrul.bot.parser.CommandParser;
+import ru.kodrul.bot.pojo.CommandArguments;
 import ru.kodrul.bot.services.GroupManagementService;
 import ru.kodrul.bot.services.ScheduledPostService;
 import ru.kodrul.bot.services.SendService;
 import ru.kodrul.bot.utils.Constants;
-import ru.kodrul.bot.utils.EscapeHelper;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +31,8 @@ public class ScheduleAbility implements AbilityExtension {
     private final ScheduledPostService scheduledPostService;
     private final GroupManagementService groupManagementService;
     private final SendService sendService;
+    private final CommandParser commandParser;
+    private final CommonAbilityHelper commonAbilityHelper;
 
     public Ability createScheduleAbility() {
         return Ability.builder()
@@ -45,22 +49,28 @@ public class ScheduleAbility implements AbilityExtension {
                     }
 
                     try {
-                        String groupName = parts[1];
-                        String scheduleInput = parts[2];
-                        String restOfText = EscapeHelper.escapeMarkdownV2(parts[3]);
+                        CommandArguments args = commandParser.parseCommandWithQuotes(fullText);
 
-                        String messageText;
-                        String imageUrl = null;
-
-                        String[] textParts = restOfText.split("\\s+");
-                        if (textParts.length > 1 &&
-                                (textParts[textParts.length - 1].startsWith("http://") ||
-                                        textParts[textParts.length - 1].startsWith("https://"))) {
-                            imageUrl = textParts[textParts.length - 1];
-                            messageText = restOfText.substring(0, restOfText.lastIndexOf(imageUrl)).trim();
-                        } else {
-                            messageText = restOfText;
+                        if (args.getGroupName() == null || args.getSchedule() == null || args.getMessage() == null) {
+                            sendScheduleHelp(ctx);
+                            return;
                         }
+
+                        String groupName = args.getGroupName();
+                        String scheduleInput = args.getSchedule();
+                        String messageText = args.getMessage();
+                        String imageUrl = args.getImageUrl();
+
+                        Optional<ChatGroup> groupOpt = groupManagementService.getGroupByName(ctx.chatId(), groupName);
+                        if (groupOpt.isEmpty()) {
+                            sendService.sendMessageToThread(ctx,
+                                    "❌ Группа '" + groupName + "' не найдена в указанном чате\n\n" +
+                                            "Сначала создайте группу командой:\n" +
+                                            "/creategroup " + groupName + " \"Описание группы\"");
+                            return;
+                        }
+
+                        String chatTitle = commonAbilityHelper.getChatTitle(ctx.chatId());
 
                         ScheduledPost schedule = scheduledPostService.createSchedule(
                                 ctx.chatId(), groupName, scheduleInput, messageText, imageUrl, ctx.user().getId()
@@ -73,12 +83,16 @@ public class ScheduleAbility implements AbilityExtension {
                                         📋 *Группа:* %s
                                         📅 *Расписание:* %s
                                         💬 *Сообщение:* %s
-                                        %s\
-                                        🆔 *ID:* %d""",
+                                        %s
+                                        👤 Создано: %s (ID: %d)
+                                        🆔 *ID:* %d
+                                """,
                                 groupName,
                                 schedule.getDescription(),
                                 messageText,
                                 imageUrl != null ? "🖼️ *Изображение:* есть\n" : "",
+                                ctx.user().getFirstName(),
+                                ctx.user().getId(),
                                 schedule.getId()
                         );
 

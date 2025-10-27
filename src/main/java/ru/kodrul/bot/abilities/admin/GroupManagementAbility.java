@@ -34,7 +34,6 @@ public class GroupManagementAbility implements AbilityExtension {
                 .name("creategroup")
                 .locality(GROUP)
                 .privacy(ADMIN)
-                .input(1)
                 .action(ctx -> {
                     String[] args = ctx.arguments();
                     if (args.length < 1) {
