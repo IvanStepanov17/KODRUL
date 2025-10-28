@@ -1,4 +1,4 @@
-package ru.kodrul.bot.config;
+package ru.kodrul.bot.config.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -9,7 +9,7 @@ import java.util.List;
 @Data
 @Component
 @ConfigurationProperties(prefix = "bot.trusted")
-public class TrustedUsersConfig {
+public class TrustedUsersProperties {
 
     private List<Long> userIds;
     private String adminKey;

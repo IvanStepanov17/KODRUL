@@ -22,6 +22,9 @@ public class ScheduledPost {
     @Column(name = "chat_id", nullable = false)
     private Long chatId;
 
+    @Column(name = "message_thread_id")
+    private Integer messageThreadId;
+
     @Column(name = "group_name", nullable = false)
     private String groupName;
 

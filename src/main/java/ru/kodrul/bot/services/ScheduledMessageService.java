@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.telegram.abilitybots.api.bot.AbilityBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -21,7 +22,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ScheduledMessageService {
 
-    private final ScheduledPostService scheduledPostService;
+    private final ScheduledService scheduledService;
     private final GroupManagementService groupManagementService;
     private final AbilityBot abilityBot;
 
@@ -31,15 +32,15 @@ public class ScheduledMessageService {
     @Scheduled(cron = "0 * * * * ?")
     public void checkScheduledPosts() {
         LocalDateTime currentDateTime = LocalDateTime.now().withSecond(0).withNano(0);
-        List<ScheduledPost> activeSchedules = scheduledPostService.getActiveSchedules();
+        List<ScheduledPost> activeSchedules = scheduledService.getActiveSchedules();
 
         log.debug("Checking {} active schedules for time: {}", activeSchedules.size(), currentDateTime);
 
         for (ScheduledPost schedule : activeSchedules) {
             try {
-                if (scheduledPostService.shouldExecute(schedule, currentDateTime)) {
+                if (scheduledService.shouldExecute(schedule, currentDateTime)) {
                     sendScheduledMessage(schedule);
-                    scheduledPostService.markAsSent(schedule.getId());
+                    scheduledService.markAsSent(schedule.getId());
                     log.info("Executed schedule: {} for group {}", schedule.getId(), schedule.getGroupName());
                 }
             } catch (Exception e) {
@@ -86,9 +87,9 @@ public class ScheduledMessageService {
             }
 
             if (schedule.getImageUrl() != null && !schedule.getImageUrl().isEmpty()) {
-                sendPhotoMessage(schedule.getChatId(), schedule.getImageUrl(), finalMessage);
+                sendPhotoMessage(schedule.getChatId(), schedule.getMessageThreadId(), schedule.getImageUrl(), finalMessage);
             } else {
-                sendTextMessage(schedule.getChatId(), finalMessage);
+                sendTextMessage(schedule.getChatId(), schedule.getMessageThreadId(), finalMessage);
             }
 
         } catch (Exception e) {
@@ -96,16 +97,26 @@ public class ScheduledMessageService {
         }
     }
 
-    private void sendTextMessage(Long chatId, String text) {
+    private void sendTextMessage(Long chatId, Integer messageThreadId, String text) throws TelegramApiException {
         try {
-            abilityBot.silent().send(text, chatId);
+            SendMessage message = new SendMessage();
+            message.setChatId(chatId.toString());
+            message.setText(text);
+
+            if (messageThreadId != null) {
+                message.setMessageThreadId(messageThreadId);
+                log.debug("Sending text message to thread {} in chat {}", messageThreadId, chatId);
+            }
+
+            abilityBot.execute(message);
         } catch (Exception e) {
-            log.error("Failed to send text message to chat {}: {}", chatId, e.getMessage());
+            log.error("Failed to send text message to chat {} thread {}: {}",
+                    chatId, messageThreadId, e.getMessage());
             throw e;
         }
     }
 
-    private void sendPhotoMessage(Long chatId, String imageUrl, String caption) {
+    private void sendPhotoMessage(Long chatId, Integer messageThreadId, String imageUrl, String caption) throws TelegramApiException {
         try {
             InputFile photo = new InputFile(imageUrl);
             SendPhoto sendPhoto = new SendPhoto();
@@ -117,14 +128,22 @@ public class ScheduledMessageService {
             }
             sendPhoto.setCaption(caption);
 
+            if (messageThreadId != null) {
+                sendPhoto.setMessageThreadId(messageThreadId);
+                log.debug("Sending photo message to thread {} in chat {}", messageThreadId, chatId);
+            }
+
             abilityBot.execute(sendPhoto);
 
         } catch (TelegramApiException e) {
-            log.error("Failed to send photo message to chat {}: {}", chatId, e.getMessage());
+            log.error("Failed to send photo message to chat {} thread {}: {}",
+                    chatId, messageThreadId, e.getMessage());
+
             String fallbackMessage = caption + "\n\n🖼️ Изображение: " + imageUrl;
-            sendTextMessage(chatId, fallbackMessage);
+            sendTextMessage(chatId, messageThreadId, fallbackMessage);
         } catch (Exception e) {
-            log.error("Unexpected error sending photo to chat {}: {}", chatId, e.getMessage());
+            log.error("Unexpected error sending photo to chat {} thread {}: {}",
+                    chatId, messageThreadId, e.getMessage());
             throw e;
         }
     }

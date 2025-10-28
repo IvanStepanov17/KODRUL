@@ -2,3 +2,6 @@ databaseChangeLog:
   - include:
       file: migrations/2025_10_09_1200_init_db.sql
       relativeToChangelogFile: true
+  - include:
+      file: migrations/2025_10_28_0100_add_message_thread_id.sql
+      relativeToChangelogFile: true

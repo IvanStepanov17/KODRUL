@@ -1,4 +1,4 @@
-package ru.kodrul.bot.config;
+package ru.kodrul.bot.config.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

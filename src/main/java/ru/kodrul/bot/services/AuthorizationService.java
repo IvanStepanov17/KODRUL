@@ -3,20 +3,20 @@ package ru.kodrul.bot.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.kodrul.bot.config.TrustedUsersConfig;
+import ru.kodrul.bot.config.properties.TrustedUsersProperties;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthorizationService {
 
-    private final TrustedUsersConfig trustedUsersConfig;
+    private final TrustedUsersProperties trustedUsersProperties;
 
     /**
      * Проверяет, является ли пользователь доверенным
      */
     public boolean isTrustedUser(Long userId) {
-        boolean isTrusted = trustedUsersConfig.getUserIds().contains(userId);
+        boolean isTrusted = trustedUsersProperties.getUserIds().contains(userId);
         log.debug("User {} trusted: {}", userId, isTrusted);
         return isTrusted;
     }
@@ -25,7 +25,7 @@ public class AuthorizationService {
      * Проверяет административный ключ
      */
     public boolean isValidAdminKey(String key) {
-        return trustedUsersConfig.getAdminKey().equals(key);
+        return trustedUsersProperties.getAdminKey().equals(key);
     }
 
     /**
@@ -36,8 +36,8 @@ public class AuthorizationService {
             throw new SecurityException("incorrect admin key");
         }
 
-        if (!trustedUsersConfig.getUserIds().contains(userId)) {
-            trustedUsersConfig.getUserIds().add(userId);
+        if (!trustedUsersProperties.getUserIds().contains(userId)) {
+            trustedUsersProperties.getUserIds().add(userId);
             log.info("Added trusted user: {}", userId);
         }
     }
@@ -46,6 +46,6 @@ public class AuthorizationService {
      * Возвращает количество доверенных пользователей
      */
     public int getTrustedUsersCount() {
-        return trustedUsersConfig.getUserIds().size();
+        return trustedUsersProperties.getUserIds().size();
     }
 }

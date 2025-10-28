@@ -1,0 +1,1 @@
+ALTER TABLE scheduled_posts ADD COLUMN message_thread_id INT;

@@ -12,7 +12,7 @@ import ru.kodrul.bot.entity.ScheduledPost;
 import ru.kodrul.bot.parser.CommandParser;
 import ru.kodrul.bot.pojo.CommandArguments;
 import ru.kodrul.bot.services.GroupManagementService;
-import ru.kodrul.bot.services.ScheduledPostService;
+import ru.kodrul.bot.services.ScheduledService;
 import ru.kodrul.bot.services.SendService;
 import ru.kodrul.bot.utils.Constants;
 
@@ -28,7 +28,7 @@ import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 @RequiredArgsConstructor
 public class ScheduleAbility implements AbilityExtension {
 
-    private final ScheduledPostService scheduledPostService;
+    private final ScheduledService scheduledService;
     private final GroupManagementService groupManagementService;
     private final SendService sendService;
     private final CommandParser commandParser;
@@ -71,9 +71,10 @@ public class ScheduleAbility implements AbilityExtension {
                         }
 
                         String chatTitle = commonAbilityHelper.getChatTitle(ctx.chatId());
+                        Integer messageThreadId = ctx.update().getMessage().getMessageThreadId();
 
-                        ScheduledPost schedule = scheduledPostService.createSchedule(
-                                ctx.chatId(), groupName, scheduleInput, messageText, imageUrl, ctx.user().getId()
+                        ScheduledPost schedule = scheduledService.createSchedule(
+                                ctx.chatId(), messageThreadId, groupName, scheduleInput, messageText, imageUrl, ctx.user().getId()
                         );
 
                         String response = String.format(
@@ -81,6 +82,7 @@ public class ScheduleAbility implements AbilityExtension {
                                         ✅ *Расписание создано!*
 
                                         📋 *Группа:* %s
+                                        💬 *Чат:* %s
                                         📅 *Расписание:* %s
                                         💬 *Сообщение:* %s
                                         %s
@@ -88,6 +90,7 @@ public class ScheduleAbility implements AbilityExtension {
                                         🆔 *ID:* %d
                                 """,
                                 groupName,
+                                chatTitle,
                                 schedule.getDescription(),
                                 messageText,
                                 imageUrl != null ? "🖼️ *Изображение:* есть\n" : "",
@@ -123,7 +126,7 @@ public class ScheduleAbility implements AbilityExtension {
                 .locality(GROUP)
                 .privacy(ADMIN)
                 .action(ctx -> {
-                    List<ScheduledPost> schedules = scheduledPostService.getActiveSchedulesForChat(ctx.chatId());
+                    List<ScheduledPost> schedules = scheduledService.getActiveSchedulesForChat(ctx.chatId());
 
                     if (schedules.isEmpty()) {
                         sendService.sendMessageToThread(ctx, "📭 В этом чате нет активных расписаний");
@@ -181,7 +184,7 @@ public class ScheduleAbility implements AbilityExtension {
                             return;
                         }
 
-                        List<ScheduledPost> schedules = scheduledPostService.getActiveSchedulesForGroup(chatId, groupName);
+                        List<ScheduledPost> schedules = scheduledService.getActiveSchedulesForGroup(chatId, groupName);
 
                         if (schedules.isEmpty()) {
                             sendService.sendMessageToThread(ctx, "📭 В группе '" + groupName + "' нет активных расписаний");
@@ -245,7 +248,7 @@ public class ScheduleAbility implements AbilityExtension {
                         Long scheduleId = Long.parseLong(args[0]);
                         boolean isActive = "on".equalsIgnoreCase(args[1]);
 
-                        scheduledPostService.toggleSchedule(scheduleId, isActive);
+                        scheduledService.toggleSchedule(scheduleId, isActive);
 
                         sendService.sendMessageToThread(
                                 ctx, 
@@ -279,7 +282,7 @@ public class ScheduleAbility implements AbilityExtension {
                     try {
                         Long scheduleId = Long.parseLong(args[0]);
 
-                        scheduledPostService.deleteSchedule(scheduleId);
+                        scheduledService.deleteSchedule(scheduleId);
 
                         sendService.sendMessageToThread(ctx, "🗑️ Расписание удалено");
 
@@ -309,7 +312,7 @@ public class ScheduleAbility implements AbilityExtension {
 
                     try {
                         Long scheduleId = Long.parseLong(args[0]);
-                        Optional<ScheduledPost> scheduleOpt = scheduledPostService.findById(scheduleId);
+                        Optional<ScheduledPost> scheduleOpt = scheduledService.findById(scheduleId);
 
                         if (scheduleOpt.isPresent()) {
                             ScheduledPost schedule = scheduleOpt.get();

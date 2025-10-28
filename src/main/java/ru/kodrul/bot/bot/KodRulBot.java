@@ -18,7 +18,7 @@ import ru.kodrul.bot.abilities.admin.ChatMemberAbility;
 import ru.kodrul.bot.abilities.admin.GroupManagementAbility;
 import ru.kodrul.bot.abilities.admin.ScheduleAbility;
 import ru.kodrul.bot.abilities.admin.UserManagementAbility;
-import ru.kodrul.bot.config.BotProperties;
+import ru.kodrul.bot.config.properties.BotProperties;
 import ru.kodrul.bot.handlers.ResponseHandler;
 
 import java.util.Set;

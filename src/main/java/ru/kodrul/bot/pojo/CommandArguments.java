@@ -6,6 +6,7 @@ import lombok.Data;
 public class CommandArguments {
 
     private Long chatId;
+    private Integer threadId;
     private String groupName;
     private String schedule;
     private String message;

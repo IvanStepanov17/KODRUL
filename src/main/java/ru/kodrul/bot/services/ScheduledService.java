@@ -15,7 +15,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ScheduledPostService {
+public class ScheduledService {
 
     private final ScheduledPostRepository scheduledPostRepository;
     private final CronService cronService;
@@ -23,6 +23,7 @@ public class ScheduledPostService {
     @Transactional
     public ScheduledPost createSchedule(
             Long chatId,
+            Integer messageThreadId,
             String groupName,
             String scheduleInput,
             String messageText,
@@ -36,13 +37,14 @@ public class ScheduledPostService {
             throw new IllegalArgumentException("Неверный формат расписания: " + scheduleInput);
         }
 
-        if (scheduledPostRepository.existsByChatIdAndGroupNameAndCronExpression(
-                chatId, groupName, cronResult.getCronExpression())) {
-            throw new IllegalArgumentException("Такое расписание уже существует для этой группы");
+        if (scheduledPostRepository.existsByChatIdAndThreadIdAndGroupNameAndCronExpression(
+                chatId, messageThreadId, groupName, cronResult.getCronExpression())) {
+            throw new IllegalArgumentException("Такое расписание уже существует для этой группы в указанном топике");
         }
 
         ScheduledPost schedule = new ScheduledPost();
         schedule.setChatId(chatId);
+        schedule.setMessageThreadId(messageThreadId);
         schedule.setGroupName(groupName);
         schedule.setCronExpression(cronResult.getCronExpression());
         schedule.setDescription(cronResult.getDescription());
@@ -52,8 +54,8 @@ public class ScheduledPostService {
         schedule.setIsActive(true);
 
         ScheduledPost saved = scheduledPostRepository.save(schedule);
-        log.info("Created schedule: {} for chat {} with cron: {}",
-                groupName, chatId, cronResult.getCronExpression());
+        log.info("Created schedule: {} for chat {} thread {} with cron: {}",
+                groupName, chatId, messageThreadId, cronResult.getCronExpression());
         return saved;
     }
 

@@ -13,18 +13,40 @@ public interface ScheduledPostRepository extends JpaRepository<ScheduledPost, Lo
 
     List<ScheduledPost> findByIsActiveTrue();
 
-    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM ScheduledPost s WHERE s.chatId = :chatId AND s.groupName = :groupName AND s.cronExpression = :cronExpression")
-    boolean existsByChatIdAndGroupNameAndCronExpression(
-            @Param("chatId") Long chatId,
-            @Param("groupName") String groupName,
-            @Param("cronExpression") String cronExpression);
-
-    @Query("SELECT s FROM ScheduledPost s WHERE s.chatId = :chatId AND s.groupName = :groupName AND s.isActive = true")
+    @Query("SELECT s FROM ScheduledPost s " +
+                "WHERE s.chatId = :chatId " +
+                    "AND s.groupName = :groupName AND s.isActive = true")
     List<ScheduledPost> findByChatIdAndGroupNameAndIsActiveTrue(
             @Param("chatId") Long chatId,
             @Param("groupName") String groupName);
 
-    // Потенциально для каких-то дополнительных функций (например, при показе расписаний для конкретной группы)
-    @Query("SELECT s FROM ScheduledPost s WHERE s.chatId = :chatId AND s.groupName = :groupName AND s.isActive = true")
-    List<ScheduledPost> findActiveByChatAndGroup(@Param("chatId") Long chatId, @Param("groupName") String groupName);
+    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END " +
+            "FROM ScheduledPost s " +
+                "WHERE s.chatId = :chatId " +
+                    "AND (s.messageThreadId = :threadId OR (s.messageThreadId IS NULL AND :threadId IS NULL)) " +
+                    "AND s.groupName = :groupName " +
+                    "AND s.cronExpression = :cronExpression")
+    boolean existsByChatIdAndThreadIdAndGroupNameAndCronExpression(
+            @Param("chatId") Long chatId,
+            @Param("threadId") Integer threadId,
+            @Param("groupName") String groupName,
+            @Param("cronExpression") String cronExpression);
+
+    @Query("SELECT s FROM ScheduledPost s " +
+                "WHERE s.chatId = :chatId " +
+                    "AND (s.messageThreadId = :threadId OR :threadId IS NULL) " +
+                    "AND s.isActive = true")
+    List<ScheduledPost> findByChatIdAndThreadIdAndIsActiveTrue(
+            @Param("chatId") Long chatId,
+            @Param("threadId") Integer threadId);
+
+    @Query("SELECT s FROM ScheduledPost s " +
+                "WHERE s.chatId = :chatId " +
+                    "AND s.groupName = :groupName " +
+                    "AND (s.messageThreadId = :threadId OR :threadId IS NULL) " +
+                    "AND s.isActive = true")
+    List<ScheduledPost> findByChatIdAndGroupNameAndThreadIdAndIsActiveTrue(
+            @Param("chatId") Long chatId,
+            @Param("groupName") String groupName,
+            @Param("threadId") Integer threadId);
 }

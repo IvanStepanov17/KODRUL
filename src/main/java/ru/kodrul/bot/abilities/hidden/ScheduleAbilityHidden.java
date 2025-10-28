@@ -12,7 +12,7 @@ import ru.kodrul.bot.parser.CommandParser;
 import ru.kodrul.bot.pojo.CommandArguments;
 import ru.kodrul.bot.services.AuthorizationService;
 import ru.kodrul.bot.services.GroupManagementService;
-import ru.kodrul.bot.services.ScheduledPostService;
+import ru.kodrul.bot.services.ScheduledService;
 import ru.kodrul.bot.services.SendService;
 import ru.kodrul.bot.utils.Constants;
 
@@ -26,7 +26,7 @@ import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 @RequiredArgsConstructor
 public class ScheduleAbilityHidden implements AbilityExtension {
 
-    private final ScheduledPostService scheduledPostService;
+    private final ScheduledService scheduledService;
     private final GroupManagementService groupManagementService;
     private final AuthorizationService authorizationService;
     private final SendService sendService;
@@ -50,7 +50,6 @@ public class ScheduleAbilityHidden implements AbilityExtension {
                     }
 
                     try {
-                        // Парсим аргументы с поддержкой кавычек
                         CommandArguments args = commandParser.parseCommandWithChatIdAndQuotes(fullText);
 
                         if (args.getChatId() == null || args.getGroupName() == null ||
@@ -60,6 +59,7 @@ public class ScheduleAbilityHidden implements AbilityExtension {
                         }
 
                         Long targetChatId = args.getChatId();
+                        Integer threadId = args.getThreadId();
                         String groupName = args.getGroupName();
                         String scheduleInput = args.getSchedule();
                         String messageText = args.getMessage();
@@ -82,9 +82,12 @@ public class ScheduleAbilityHidden implements AbilityExtension {
                         }
 
                         String chatTitle = commonAbilityHelper.getChatTitle(targetChatId);
+                        String threadInfo = threadId != null
+                                ? " (топик ID: " + threadId + ")"
+                                : " (основной чат)";
 
-                        ScheduledPost schedule = scheduledPostService.createSchedule(
-                                targetChatId, groupName, scheduleInput, messageText, imageUrl, userId
+                        ScheduledPost schedule = scheduledService.createSchedule(
+                                targetChatId, threadId, groupName, scheduleInput, messageText, imageUrl, userId
                         );
 
                         String successMessage = String.format(
@@ -92,7 +95,7 @@ public class ScheduleAbilityHidden implements AbilityExtension {
                                         ✅ Расписание создано!
 
                                         📋 Группа: %s
-                                        💬 Чат: %s (ID: %d)
+                                        💬 Чат: %s%s
                                         ⏰ Расписание: %s
                                         ✉️ Сообщение: %s
                                         %s
@@ -101,7 +104,7 @@ public class ScheduleAbilityHidden implements AbilityExtension {
                                 """,
                                 groupName,
                                 chatTitle,
-                                targetChatId,
+                                threadInfo,
                                 schedule.getDescription(),
                                 messageText,
                                 imageUrl != null ? "🖼️ Изображение: " + imageUrl + "\n" : "",
@@ -115,7 +118,7 @@ public class ScheduleAbilityHidden implements AbilityExtension {
                                 userId, targetChatId, schedule.getDescription());
 
                     } catch (NumberFormatException e) {
-                        sendService.sendToUser(userId, "❌ Chat ID должен быть числом");
+                        sendService.sendToUser(userId, "❌ Chat ID и Thread ID должен быть числом");
                     } catch (Exception e) {
                         log.error("Error creating schedule for user {}: {}", userId, e.getMessage(), e);
                         sendService.sendToUser(userId, "❌ Ошибка при создании расписания: " + e.getMessage());
@@ -151,7 +154,7 @@ public class ScheduleAbilityHidden implements AbilityExtension {
                         Long targetChatId = Long.parseLong(args[0]);
                         String chatTitle = commonAbilityHelper.getChatTitle(targetChatId);
 
-                        var schedules = scheduledPostService.getActiveSchedulesForChat(targetChatId);
+                        var schedules = scheduledService.getActiveSchedulesForChat(targetChatId);
 
                         if (schedules.isEmpty()) {
                             sendService.sendToUser(userId,
@@ -224,13 +227,13 @@ public class ScheduleAbilityHidden implements AbilityExtension {
                         Long scheduleId = Long.parseLong(args[0]);
                         boolean isActive = "on".equalsIgnoreCase(args[1]);
 
-                        var scheduleOpt = scheduledPostService.findById(scheduleId);
+                        var scheduleOpt = scheduledService.findById(scheduleId);
                         if (scheduleOpt.isEmpty()) {
                             sendService.sendToUser(userId, "❌ Расписание с ID " + scheduleId + " не найдено");
                             return;
                         }
 
-                        scheduledPostService.toggleSchedule(scheduleId, isActive);
+                        scheduledService.toggleSchedule(scheduleId, isActive);
 
                         ScheduledPost schedule = scheduleOpt.get();
                         String chatTitle = commonAbilityHelper.getChatTitle(schedule.getChatId());
@@ -286,7 +289,7 @@ public class ScheduleAbilityHidden implements AbilityExtension {
                     try {
                         Long scheduleId = Long.parseLong(args[0]);
 
-                        var scheduleOpt = scheduledPostService.findById(scheduleId);
+                        var scheduleOpt = scheduledService.findById(scheduleId);
                         if (scheduleOpt.isEmpty()) {
                             sendService.sendToUser(userId, "❌ Расписание с ID " + scheduleId + " не найдено");
                             return;
@@ -295,7 +298,7 @@ public class ScheduleAbilityHidden implements AbilityExtension {
                         ScheduledPost schedule = scheduleOpt.get();
                         String chatTitle = commonAbilityHelper.getChatTitle(schedule.getChatId());
 
-                        scheduledPostService.deleteSchedule(scheduleId);
+                        scheduledService.deleteSchedule(scheduleId);
 
                         String message = String.format(
                                 """
@@ -345,7 +348,7 @@ public class ScheduleAbilityHidden implements AbilityExtension {
 
                     try {
                         Long scheduleId = Long.parseLong(args[0]);
-                        var scheduleOpt = scheduledPostService.findById(scheduleId);
+                        var scheduleOpt = scheduledService.findById(scheduleId);
 
                         if (scheduleOpt.isPresent()) {
                             ScheduledPost schedule = scheduleOpt.get();
@@ -385,7 +388,7 @@ public class ScheduleAbilityHidden implements AbilityExtension {
 
     private void sendScheduleHiddenHelp(Long userId) {
         String helpText = """
-            📅 *Использование:* /createschedulehidden <chat_id> <группа> "<расписание>" <сообщение>
+            📅 *Использование:* /createschedulehidden <chat_id> [thread_id] <группа> "<расписание>" <сообщение>
             
             *ОБРАТИТЕ ВНИМАНИЕ:* Расписание и текст сообщения должны быть в кавычках!
             
@@ -407,6 +410,15 @@ public class ScheduleAbilityHidden implements AbilityExtension {
             /createschedulehidden -100123456789 Созвон "еженедельно пн,ср,пт 10:30" "Время созвона!"
             /createschedulehidden -100123456789 Отчет "ежемесячно 1 09:00" "Ежемесячный отчет"
             /createschedulehidden -100123456789 Обед "0 0 12 * * ?" "Время обеда!"
+
+                • *В конкретный топик:*
+                  /createschedulehidden -100123456789 123 Тест "09:00" "Доброе утро в топике!"
+                • *С изображением в топик:*
+                  /createschedulehidden -100123456789 123 Тест "09:00" "Доброе утро!" https://example.com/image.jpg
+            
+            💡 *Как найти thread_id?*
+            Скопируйте ссылку на сообщение в нужном топике супергруппы. В ссылке будет формат:
+            https://t.me/chat/123/456/789 или https://t.me/chat/123/456 где 456 - это thread_id
             
             *Для URL изображения добавьте его в конце:*
             /createschedulehidden -100123456789 Тест "09:00" "Доброе утро!" https://example.com/image.jpg
